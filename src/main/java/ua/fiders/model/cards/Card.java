@@ -1,14 +1,19 @@
 package ua.fiders.model.cards;
 
-public class Card {
+import java.util.HashSet;
+import java.util.Set;
+
+public abstract class Card {
     private String name;
     private int manaCost;
     private Type type;
+    private Set<CardKeywords> keywords;
 
-    public Card(String name, Type type, int manaCost) {
+    public Card(String name, Type type, int manaCost, Set<CardKeywords> keywords) {
         this.name = name;
         this.type = type;
         this.manaCost = manaCost;
+        this.keywords = (keywords != null) ? keywords : new HashSet<>();
     }
 
     public String getName() {
@@ -27,4 +32,11 @@ public class Card {
         this.manaCost = manaCost;
     }
 
+    public Set<CardKeywords> getKeywords() {
+        return keywords;
+    }
+
+    public Type getType() {
+        return type;
+    }
 }

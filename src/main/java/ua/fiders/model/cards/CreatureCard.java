@@ -1,11 +1,13 @@
 package ua.fiders.model.cards;
 
+import java.util.Set;
+
 public class CreatureCard extends Card{
     private int attack;
     private int hp;
 
-    public CreatureCard(String name, Type type, int manaCost, int attack, int hp) {
-        super(name, type, manaCost);
+    public CreatureCard(String name, Type type, int manaCost, Set<CardKeywords> keywords, int attack, int hp) {
+        super(name, type, manaCost, keywords);
         this.attack = attack;
         this.hp = hp;
     }
