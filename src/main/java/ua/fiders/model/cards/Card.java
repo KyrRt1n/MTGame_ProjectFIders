@@ -7,7 +7,7 @@ public abstract class Card {
     private String name;
     private int manaCost;
     private Type type;
-    private Set<CardKeywords> keywords;
+    protected Set<CardKeywords> keywords;
 
     public Card(String name, Type type, int manaCost, Set<CardKeywords> keywords) {
         this.name = name;
