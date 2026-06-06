@@ -11,6 +11,7 @@ public class Player {
     private int hp = 20;
     private List<Card> hand = new ArrayList<>();
     private List<Card> deck = new ArrayList<>();
+    private List<Card> graveyard = new ArrayList<>();
     private int maxMana = 0;
     private int currentMana = 0;
 
