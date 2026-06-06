@@ -1,6 +1,7 @@
 package ua.fiders.model;
 
 import ua.fiders.model.cards.*;
+import ua.fiders.model.enums.CardKeywords;
 
 public class Permanent {
 

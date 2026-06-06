@@ -42,6 +42,10 @@ public class Player {
         this.maxMana = maxMana;
     }
 
+    public void addMaxMana(int mana){
+        this.maxMana += mana;
+    }
+
     public int getCurrentMana() {
         return currentMana;
     }
