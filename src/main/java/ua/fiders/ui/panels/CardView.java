@@ -8,7 +8,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import ua.fiders.model.cards.Card;
-import ua.fiders.model.cards.CardKeywords;
+import ua.fiders.model.enums.CardKeywords;
 import ua.fiders.model.cards.CreatureCard;
 import javafx.animation.RotateTransition;
 import javafx.util.Duration;
