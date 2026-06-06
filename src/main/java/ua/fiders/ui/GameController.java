@@ -103,7 +103,7 @@ public class GameController {
         opponent = new Player("AI Bot");
 
         class LandCard extends Card {
-            public LandCard(String name) { super(name, Type.Land, 0, new HashSet<>()); }
+            public LandCard(String name) { super(name, Type.Land, 0, new HashSet<>(), "abc"); }
         }
 
         Set<CardKeywords> flyingKeyword = new HashSet<>();
@@ -113,9 +113,9 @@ public class GameController {
         strongKeywords.add(CardKeywords.Lifelink);
         strongKeywords.add(CardKeywords.Trample);
 
-        Card dragon = new CreatureCard("Black Dragon", 5, flyingKeyword, 5, 5);
-        Card goblin = new CreatureCard("Goblin Scout", 1, null, 2, 1);
-        Card paladin = new CreatureCard("Holy Paladin", 4, strongKeywords, 4, 4);
+        Card dragon = new CreatureCard("Black Dragon", 5, flyingKeyword, "abc", 5, 5);
+        Card goblin = new CreatureCard("Goblin Scout", 1, null, "abc", 2, 1);
+        Card paladin = new CreatureCard("Holy Paladin", 4, strongKeywords, "abc", 4, 4);
         Card forest = new LandCard("Forest");
         Card mountain = new LandCard("Mountain");
 

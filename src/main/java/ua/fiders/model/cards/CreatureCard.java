@@ -9,8 +9,8 @@ public class CreatureCard extends Card{
     private int attack;
     private int hp;
 
-    public CreatureCard(String name, int manaCost, Set<CardKeywords> keywords, int attack, int hp) {
-        super(name, Type.Creature, manaCost, keywords);
+    public CreatureCard(String name, int manaCost, Set<CardKeywords> keywords, String imgPath, int attack, int hp) {
+        super(name, Type.Creature, manaCost, keywords, imgPath);
         this.attack = attack;
         this.hp = hp;
     }

@@ -11,12 +11,14 @@ public abstract class Card {
     private int manaCost;
     private Type type;
     protected Set<CardKeywords> keywords;
+    private String imgPath;
 
-    public Card(String name, Type type, int manaCost, Set<CardKeywords> keywords) {
+    public Card(String name, Type type, int manaCost, Set<CardKeywords> keywords, String imgPath) {
         this.name = name;
         this.type = type;
         this.manaCost = manaCost;
         this.keywords = (keywords != null) ? keywords : new HashSet<>();
+        this.imgPath = imgPath;
     }
 
     public String getName() {
