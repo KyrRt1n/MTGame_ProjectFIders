@@ -1,5 +1,8 @@
 package ua.fiders.model.cards;
 
+import ua.fiders.model.enums.CardKeywords;
+import ua.fiders.model.enums.Type;
+
 import java.util.HashSet;
 import java.util.Set;
 
