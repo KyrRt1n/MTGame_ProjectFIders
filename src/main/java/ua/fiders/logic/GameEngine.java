@@ -2,6 +2,7 @@ package ua.fiders.logic;
 
 import ua.fiders.model.*;
 import ua.fiders.model.cards.*;
+import ua.fiders.model.enums.Type;
 
 public class GameEngine {
 
