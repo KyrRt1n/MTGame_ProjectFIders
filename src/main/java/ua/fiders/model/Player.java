@@ -12,18 +12,18 @@ public class Player {
     private List<Card> hand = new ArrayList<>();
     private List<Card> deck = new ArrayList<>();
     private int maxMana = 0;
-    private int currMana = 0;
+    private int currentMana = 0;
 
     public Player(String name) {
         this.name = name;
     }
 
-    private void spendMana(int manaCost){
-        this.currMana -= manaCost;
+    public void spendMana(int manaCost){
+        this.currentMana -= manaCost;
     }
 
-    private void refillMana(){
-        this.currMana = maxMana;
+    public void refillMana(){
+        this.currentMana = maxMana;
     }
 
     public Card drawnCard() {
@@ -42,12 +42,12 @@ public class Player {
         this.maxMana = maxMana;
     }
 
-    public int getCurrMana() {
-        return currMana;
+    public int getCurrentMana() {
+        return currentMana;
     }
 
-    public void setCurrMana(int currMana) {
-        this.currMana = currMana;
+    public void setCurrentMana(int currentMana) {
+        this.currentMana = currentMana;
     }
 
     public List<Card> getDeck() {
