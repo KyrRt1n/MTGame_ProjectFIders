@@ -44,4 +44,36 @@ public class Permanent {
     public Player getController() {
         return controller;
     }
+
+    public int getCurrentAttack() {
+        if (baseCard instanceof CreatureCard card)
+            return card.getAttack() + tempDamageBuff;
+        return 0;
+    }
+
+    public int getMaxHp() {
+        if (baseCard instanceof CreatureCard card)
+            return card.getHp() + tempHpBuff;
+        return 0;
+    }
+
+    public int getRemainingHp(){
+        return getMaxHp() - damageTaken;
+    }
+
+    public void takeDamage(int amount) {
+        damageTaken += amount;
+    }
+
+    public int getDamageTaken() {
+        return damageTaken;
+    }
+
+    public boolean isDead() {
+        return damageTaken >= getMaxHp();
+    }
+
+    public void clearDamage() {
+        damageTaken = 0;
+    }
 }
