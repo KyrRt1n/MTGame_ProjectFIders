@@ -113,9 +113,9 @@ public class GameController {
         strongKeywords.add(CardKeywords.Lifelink);
         strongKeywords.add(CardKeywords.Trample);
 
-        Card dragon = new CreatureCard("Black Dragon", Type.Creature, 5, flyingKeyword, 5, 5);
-        Card goblin = new CreatureCard("Goblin Scout", Type.Creature, 1, null, 2, 1);
-        Card paladin = new CreatureCard("Holy Paladin", Type.Creature, 4, strongKeywords, 4, 4);
+        Card dragon = new CreatureCard("Black Dragon", 5, flyingKeyword, 5, 5);
+        Card goblin = new CreatureCard("Goblin Scout", 1, null, 2, 1);
+        Card paladin = new CreatureCard("Holy Paladin", 4, strongKeywords, 4, 4);
         Card forest = new LandCard("Forest");
         Card mountain = new LandCard("Mountain");
 
