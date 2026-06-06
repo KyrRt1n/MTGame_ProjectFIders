@@ -1,4 +1,4 @@
-package ua.fiders.model.cards;
+package ua.fiders.model.enums;
 
 public enum Type {
     Creature,
