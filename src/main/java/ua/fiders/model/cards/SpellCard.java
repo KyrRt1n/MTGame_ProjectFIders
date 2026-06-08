@@ -7,8 +7,8 @@ import java.util.*;
 public class SpellCard extends Card {
     private final List<CardEffect> effects;
 
-    public SpellCard(String name, int manaCost, Set<CardKeywords> keywords, String imgPath, List<CardEffect> effects) {
-        super(name, Type.Sorcery, manaCost, keywords, imgPath);
+    public SpellCard(String name, int manaCost, String imgPath, List<CardEffect> effects) {
+        super(name, Type.Sorcery, manaCost, new HashSet<>(), imgPath);
         this.effects = List.copyOf(effects);
     }
 
