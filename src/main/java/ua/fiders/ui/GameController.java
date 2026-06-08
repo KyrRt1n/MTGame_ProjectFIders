@@ -148,12 +148,11 @@ public class GameController {
         strongKeywords.add(CardKeywords.Trample);
 
         Card dragon = new CreatureCard("Black Dragon", 5, flyingKeyword, "abc", 5, 5);
-        Card goblin = new CreatureCard("Goblin Scout", 1, null, "abc", 2, 1);
         Card paladin = new CreatureCard("Holy Paladin", 4, strongKeywords, "abc", 4, 4);
         Card forest = new LandCard("Forest");
-        Card mountain = new LandCard("Mountain");
+        Card fireball = new SpellCard("Fireball", 2, "imgPath", List.of(new DamageEnemyEffect(5)));
 
-        player1.getHand().addAll(List.of(forest, mountain, goblin, paladin, dragon));
+        player1.getHand().addAll(List.of(forest, paladin, dragon, fireball));
 
         gameEngine = new GameEngine(player1, opponent);
     }
