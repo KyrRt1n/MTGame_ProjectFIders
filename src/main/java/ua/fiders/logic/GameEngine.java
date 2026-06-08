@@ -4,6 +4,8 @@ import ua.fiders.model.GameState;
 import ua.fiders.model.Permanent;
 import ua.fiders.model.Player;
 import ua.fiders.model.cards.Card;
+import ua.fiders.model.cards.SpellCard;
+import ua.fiders.model.effects.CardEffect;
 import ua.fiders.model.enums.Phase;
 
 import java.util.List;
@@ -17,6 +19,8 @@ public class GameEngine {
 
     private GameListener listener;
     private boolean landPlayedThisTurn;
+
+    private final EffectExecutor effectExecutor = new EffectExecutor();
 
     public GameEngine(Player player1, Player player2) {
         this.state = new GameState(player1, player2);
@@ -85,6 +89,13 @@ public class GameEngine {
         }
         player.spendMana(card.getManaCost());
         player.getHand().remove(card);
+
+        if(card instanceof SpellCard spell){
+            System.out.println(player.getName() + " чаклує: " + spell.getName());
+            for (CardEffect effect : spell.getEffects())
+                effectExecutor.execute(effect, player, state);
+        }
+
         notifyManaChanged(player);
         return true;
     }

@@ -6,6 +6,7 @@ import javafx.scene.layout.BorderPane;
 import ua.fiders.logic.*;
 import ua.fiders.model.*;
 import ua.fiders.model.cards.*;
+import ua.fiders.model.effects.*;
 import ua.fiders.model.enums.*;
 import ua.fiders.ui.panels.BattlefieldPanel;
 import ua.fiders.ui.panels.HandPanel;
