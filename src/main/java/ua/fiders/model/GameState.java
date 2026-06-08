@@ -41,4 +41,8 @@ public class GameState {
             currentPlayer = player1;
         }
     }
+
+    public Player getOpponentPlayer() {
+        return currentPlayer == player1 ? player2 : player1;
+    }
 }

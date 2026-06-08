@@ -9,4 +9,6 @@ public interface GameListener {
     void onTurnChanged(Player newActivePlayer);
 
     void onPermanentEnteredBattlefield(Permanent permanent);
+
+    void onHpChanged(Player player);
 }
