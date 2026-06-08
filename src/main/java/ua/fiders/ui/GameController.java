@@ -215,7 +215,7 @@ public class GameController {
         gameEngine.nextPhase();
 
         String currentPhaseName = gameEngine.getCurrentPhase().name();
-        controlPanel.updatePhaseText("Фаза: " + currentPhaseName);
+        controlPanel.updatePhaseText(currentPhaseName);
 
         System.out.println("Гру переведено у фазу: " + currentPhaseName);
     }
