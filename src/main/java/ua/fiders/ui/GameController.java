@@ -8,15 +8,9 @@ import ua.fiders.model.*;
 import ua.fiders.model.cards.*;
 import ua.fiders.model.effects.*;
 import ua.fiders.model.enums.*;
-import ua.fiders.ui.panels.BattlefieldPanel;
-import ua.fiders.ui.panels.HandPanel;
-import ua.fiders.ui.panels.PlayerInfoPanel;
+import ua.fiders.ui.panels.*;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.HBox;
-import ua.fiders.ui.panels.CardView;
-import ua.fiders.ui.panels.GameControlPanel;
-import ua.fiders.ui.panels.OpponentHandPanel;
-import ua.fiders.ui.panels.GraveyardPanel;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.animation.ParallelTransition;
@@ -44,6 +38,7 @@ public class GameController {
 
     // UI Панелі
     private PlayerInfoPanel playerInfoPanel;
+    private OpponentInfoPanel opponentInfoPanel;
     private HandPanel playerHandPanel;
     private BattlefieldPanel battlefieldPanel;
     private GameControlPanel controlPanel;
@@ -88,12 +83,19 @@ public class GameController {
             public void onPermanentEnteredBattlefield(Permanent permanent) {
                 // TODO: візуальне переміщення в Drag and Drop
             }
+
+            @Override
+            public void onHpChanged(Player player){
+                opponentInfoPanel.updateHp();
+                playerInfoPanel.updateHp();
+            }
         });
 
     }
 
     private void setupUI() {
         playerInfoPanel = new PlayerInfoPanel(player1);
+        opponentInfoPanel = new OpponentInfoPanel(opponent);
         playerHandPanel = new HandPanel();
         battlefieldPanel = new BattlefieldPanel();
         controlPanel = new GameControlPanel();
@@ -121,8 +123,10 @@ public class GameController {
         rootLayout.setCenter(centerLayout);
         rootLayout.setBottom(playerHandPanel);
 
-        BorderPane.setMargin(playerInfoPanel, new Insets(20, 0, 20, 20));
-        rootLayout.setLeft(playerInfoPanel);
+        VBox leftPanel = new VBox(20);
+        leftPanel.getChildren().addAll(opponentInfoPanel, playerInfoPanel);
+        BorderPane.setMargin(leftPanel, new Insets(20, 0, 20, 20));
+        rootLayout.setLeft(leftPanel);
 
         BorderPane.setMargin(controlPanel, new Insets(20, 20, 20, 0));
         rootLayout.setRight(controlPanel);
