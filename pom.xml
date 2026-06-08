@@ -40,5 +40,14 @@
             <artifactId>junit-jupiter</artifactId>
             <version>${junit.version}</version>
         </dependency>
+
+        <!-- javafx-media -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-media</artifactId>
+            <version>27-ea+19</version>
+            <scope>compile</scope>
+        </dependency>
+
     </dependencies>
 </project>

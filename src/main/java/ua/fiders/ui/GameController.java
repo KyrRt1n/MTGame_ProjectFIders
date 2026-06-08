@@ -26,6 +26,9 @@ import javafx.geometry.Bounds;
 import javafx.scene.input.MouseButton;
 import javafx.util.Duration;
 import java.util.List;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
+import java.net.URL;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -58,6 +61,7 @@ public class GameController {
 
         initMockData();
         setupUI();
+        startBackgroundMusic();
     }
 
     private void setupUI() {
@@ -219,5 +223,25 @@ public class GameController {
         });
 
         pt.play();
+    }
+
+    private void startBackgroundMusic() {
+        try {
+            URL resource = getClass().getResource("/music/MTG_Arena_OST_-_Battle_Theme_4.mp3");
+            if (resource == null) {
+                System.out.println("Файл музики не знайдено!");
+                return;
+            }
+
+            Media sound = new Media(resource.toString());
+            MediaPlayer mediaPlayer = new MediaPlayer(sound);
+
+            mediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
+            mediaPlayer.setVolume(0.5);
+
+            mediaPlayer.play();
+        } catch (Exception e) {
+            System.out.println("Помилка відтворення музики: " + e.getMessage());
+        }
     }
 }
