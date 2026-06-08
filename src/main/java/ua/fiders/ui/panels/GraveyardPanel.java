@@ -41,6 +41,8 @@ public class GraveyardPanel extends StackPane {
         cardView.setRotate(0);
         cardView.setHighlight(false);
         cardView.setOpacity(0.6); // Робимо "мертву" карту трохи тьмянішою
+        cardView.setOnMouseClicked(null);
+        cardView.setOnDragDetected(null);
 
         // Очищаємо кладовище
         // і кладемо нову карту
