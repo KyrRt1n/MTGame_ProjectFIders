@@ -57,7 +57,7 @@ public class GameController {
 
     public GameController() {
         rootLayout = new BorderPane();
-        rootLayout.setStyle("-fx-background-color: #151517;");
+        rootLayout.setStyle("-fx-background-color: radial-gradient(center 50% 50%, radius 100%, #301515 0%, #050505 85%);");
 
         initMockData();
         setupUI();
@@ -227,7 +227,7 @@ public class GameController {
 
     private void startBackgroundMusic() {
         try {
-            URL resource = getClass().getResource("/music/MTG_Arena_OST_-_Battle_Theme_4.mp3");
+            URL resource = getClass().getResource("/music/ob-lix-island-of-the-lost-dark-fantasy-background-music-110368.mp3");
             if (resource == null) {
                 System.out.println("Файл музики не знайдено!");
                 return;
@@ -237,7 +237,7 @@ public class GameController {
             MediaPlayer mediaPlayer = new MediaPlayer(sound);
 
             mediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
-            mediaPlayer.setVolume(0.5);
+            mediaPlayer.setVolume(0.4);
 
             mediaPlayer.play();
         } catch (Exception e) {

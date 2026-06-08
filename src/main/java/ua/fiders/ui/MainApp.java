@@ -15,7 +15,7 @@ public class MainApp extends Application {
         Image appIcon = new Image(getClass().getResourceAsStream("/icon.png"));
         primaryStage.getIcons().add(appIcon);
 
-        primaryStage.setTitle("FIдери");
+        primaryStage.setTitle("Java the Gathering");
         primaryStage.setScene(scene);
         primaryStage.show();
     }
