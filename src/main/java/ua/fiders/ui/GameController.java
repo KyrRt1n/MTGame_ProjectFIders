@@ -253,7 +253,7 @@ public class GameController {
 
     private void startBackgroundMusic() {
         try {
-            URL resource = getClass().getResource("/music/ob-lix-island-of-the-lost-dark-fantasy-background-music-110368.mp3");
+            URL resource = getClass().getResource("/music/bg_music.mp3");
             if (resource == null) {
                 System.out.println("Файл музики не знайдено!");
                 return;
