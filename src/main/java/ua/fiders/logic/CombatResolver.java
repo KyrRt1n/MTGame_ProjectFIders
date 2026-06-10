@@ -80,7 +80,13 @@ public class CombatResolver {
     }
 
     private void removeDeadCreatures(GameState state) {
-        state.getBattlefield().removeIf(p -> isCreature(p) && p.isDead());
+        state.getBattlefield().removeIf(p -> {
+            if (isCreature(p) && p.isDead()) {
+                p.getController().getGraveyard().add(p.getBaseCard());
+                return true;
+            }
+            return false;
+        });
     }
 
     private boolean isCreature(Permanent permanent) {
