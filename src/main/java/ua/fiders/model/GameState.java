@@ -42,7 +42,7 @@ public class GameState {
         }
     }
 
-    public Player getOpponentPlayer() {
-        return currentPlayer == player1 ? player2 : player1;
+    public Player getOpponent(Player player) {
+        return (player == player1) ? player2 : player1;
     }
 }

@@ -97,7 +97,7 @@ public class GameEngine {
         }
 
         notifyManaChanged(player);
-        notifyHpChanged(state.getOpponentPlayer());
+        notifyHpChanged(state.getOpponent(state.getCurrentPlayer()));
         return true;
     }
 
