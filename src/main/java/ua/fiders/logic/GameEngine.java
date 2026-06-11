@@ -24,7 +24,7 @@ public class GameEngine {
 
     public GameEngine(Player player1, Player player2) {
         this.state = new GameState(player1, player2);
-        this.phaseManager = new PhaseManager(state);
+        this.phaseManager = new PhaseManager(this, state);
         this.combatResolver = new CombatResolver();
         this.landPlayedThisTurn = false;
     }
@@ -154,5 +154,11 @@ public class GameEngine {
 
     public Player getCurrentPlayer() {
         return state.getCurrentPlayer();
+    }
+
+    public void notifyHandUpdated(Player player) {
+        if (listener != null) {
+            listener.onHandUpdated(player);
+        }
     }
 }

@@ -43,9 +43,6 @@ public class GameController {
     private BattlefieldPanel battlefieldPanel;
     private GameControlPanel controlPanel;
 
-    // Логіка фаз
-    private final String[] phases = {"ПОЧАТОК ХОДУ", "ГОЛОВНА ФАЗА", "ФАЗА БОЮ", "ДРУГА ГОЛОВНА", "КІНЕЦЬ ХОДУ"};
-    private int currentPhaseIndex = 0;
 
     private Player player1;
     private Player opponent;
@@ -76,18 +73,46 @@ public class GameController {
 
             @Override
             public void onTurnChanged(Player newActivePlayer) {
-                controlPanel.updatePhaseText(gameEngine.getCurrentPhase().name() + "\nХід: " + newActivePlayer.getName());
+                controlPanel.updatePhaseText(getLocalizedPhaseName(gameEngine.getCurrentPhase()) + "\nХід: " + newActivePlayer.getName());
             }
 
             @Override
             public void onPermanentEnteredBattlefield(Permanent permanent) {
-                // TODO: візуальне переміщення в Drag and Drop
+                CardView boardCardView = new CardView(permanent.getBaseCard());
+                boardCardView.setOnBoardMode();
+
+                boardCardView.setOnMouseClicked(mouseEvent -> {
+                    if (mouseEvent.getButton() == MouseButton.SECONDARY) {
+                        discardCard(boardCardView);
+                    } else {
+                        if (boardCardView.isTapped()) {
+                            boardCardView.untap();
+                            boardCardView.setHighlight(false);
+                        } else {
+                            boardCardView.tap();
+                            boardCardView.setHighlight(true);
+                        }
+                    }
+                });
+
+                if (permanent.getController() == player1) {
+                    battlefieldPanel.getPlayerZone().getChildren().add(boardCardView);
+                } else {
+                    battlefieldPanel.getOpponentZone().getChildren().add(boardCardView);
+                }
             }
 
             @Override
             public void onHpChanged(Player player){
                 opponentInfoPanel.updateHp();
                 playerInfoPanel.updateHp();
+            }
+
+            @Override
+            public void onHandUpdated(Player player) {
+                if (player == player1) {
+                    playerHandPanel.updateHand(player.getHand());
+                }
             }
         });
 
@@ -104,7 +129,7 @@ public class GameController {
         playerGraveyard = new GraveyardPanel("ВІДБІЙ");
         opponentGraveyard = new GraveyardPanel("ВІДБІЙ ВОРОГА");
 
-        controlPanel.updatePhaseText(phases[currentPhaseIndex]);
+        controlPanel.updatePhaseText(getLocalizedPhaseName(gameEngine.getCurrentPhase()));
         controlPanel.setNextPhaseAction(this::advancePhase);
         playerHandPanel.updateHand(player1.getHand());
 
@@ -183,28 +208,11 @@ public class GameController {
 
                 if (gameEngine.playCard(playedCard)) {
                     playerHandPanel.getChildren().remove(dragCardView);
-                    playerZone.getChildren().add(dragCardView);
-                    dragCardView.setOnBoardMode();
-
-                    dragCardView.setOnMouseClicked(mouseEvent -> {
-                        if (mouseEvent.getButton() == MouseButton.SECONDARY)
-                            discardCard(dragCardView);
-                        else {
-                            if (dragCardView.isTapped()) {
-                                dragCardView.untap();
-                                dragCardView.setHighlight(false);
-                            } else {
-                                dragCardView.tap();
-                                dragCardView.setHighlight(true);
-                            }
-                        }
-                    });
-
                     System.out.println("Успішно зіграно: " + playedCard.getName());
                     success = true;
-
-                } else
+                } else {
                     System.out.println("Неможливо зіграти " + playedCard.getName());
+                }
             }
 
             event.setDropCompleted(success);
@@ -218,10 +226,10 @@ public class GameController {
     private void advancePhase() {
         gameEngine.nextPhase();
 
-        String currentPhaseName = gameEngine.getCurrentPhase().name();
-        controlPanel.updatePhaseText(currentPhaseName);
+        String localizedPhaseName = getLocalizedPhaseName(gameEngine.getCurrentPhase());
+        controlPanel.updatePhaseText(localizedPhaseName);
 
-        System.out.println("Гру переведено у фазу: " + currentPhaseName);
+        System.out.println("Гру переведено у фазу: " + localizedPhaseName);
     }
 
     /**
@@ -273,5 +281,15 @@ public class GameController {
         } catch (Exception e) {
             System.out.println("Помилка відтворення музики: " + e.getMessage());
         }
+    }
+
+    private String getLocalizedPhaseName(Phase phase) {
+        return switch (phase) {
+            case START -> "ПОЧАТОК ХОДУ";
+            case MAIN -> "ГОЛОВНА ФАЗА";
+            case COMBAT -> "ФАЗА БОЮ";
+            case SECOND_MAIN -> "ДРУГА ГОЛОВНА";
+            case END -> "КІНЕЦЬ ХОДУ";
+        };
     }
 }
