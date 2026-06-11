@@ -20,9 +20,6 @@ import javafx.animation.TranslateTransition;
 import javafx.geometry.Bounds;
 import javafx.scene.input.MouseButton;
 import javafx.util.Duration;
-import java.util.List;
-import javafx.scene.media.Media;
-import javafx.scene.media.MediaPlayer;
 import java.net.URL;
 
 import java.util.HashSet;
@@ -59,7 +56,6 @@ public class GameController {
         opponent = session.getBot();
         setupUI();
         setupGameListener();
-        startBackgroundMusic();
         session.start();
     }
 
@@ -246,26 +242,6 @@ public class GameController {
         });
 
         pt.play();
-    }
-
-    private void startBackgroundMusic() {
-        try {
-            URL resource = getClass().getResource("/music/bg_music.mp3");
-            if (resource == null) {
-                System.out.println("Файл музики не знайдено!");
-                return;
-            }
-
-            Media sound = new Media(resource.toString());
-            MediaPlayer mediaPlayer = new MediaPlayer(sound);
-
-            mediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
-            mediaPlayer.setVolume(0.4);
-
-            mediaPlayer.play();
-        } catch (Exception e) {
-            System.out.println("Помилка відтворення музики: " + e.getMessage());
-        }
     }
 
     private String getLocalizedPhaseName(Phase phase) {
