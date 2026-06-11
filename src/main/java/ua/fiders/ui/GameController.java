@@ -203,13 +203,17 @@ public class GameController {
         System.out.println("Гру переведено у фазу: " + localizedPhaseName);
 
         if (session.isBotTurn()) {
-            System.out.println("[UI] Ход перейшов до бота. Блокування інтерфейсу...");
+            System.out.println("[UI] Хід перейшов до бота. Блокування інтерфейсу...");
             setInteractionEnabled(false);
-            session.executeBotTurn();
 
-            setInteractionEnabled(true);
-            System.out.println("[UI] Ход повернувся до гравця. Інтерфейс разблоковано.");
-            controlPanel.updatePhaseText(getLocalizedPhaseName(engine.getCurrentPhase()));
+            new Thread(() -> {
+                session.executeBotTurn();
+                javafx.application.Platform.runLater(() -> {
+                    setInteractionEnabled(true);
+                    System.out.println("[UI] Хід повернувся до гравця. Інтерфейс розблоковано.");
+                    controlPanel.updatePhaseText(getLocalizedPhaseName(engine.getCurrentPhase()));
+                });
+            }).start();
         }
     }
 
