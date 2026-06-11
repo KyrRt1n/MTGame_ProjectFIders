@@ -1,0 +1,18 @@
+[
+  { "type": "Land", "name": "Forest", "count": 13, "keywords": [], "imgPath": "/img/forest.png" },
+  { "type": "Creature", "name": "Llanowar Elves", "count": 2, "manaCost": 1, "attack": 1, "hp": 1, "keywords": [], "imgPath": "/img/llanowar_elves.png" },
+  { "type": "Creature", "name": "Highland Game", "count": 1, "manaCost": 2, "attack": 2, "hp": 1, "keywords": [], "imgPath": "/img/highland_game.png" },
+  { "type": "Creature", "name": "Wall of Vines", "count": 1, "manaCost": 2, "attack": 0, "hp": 3, "keywords": [], "imgPath": "/img/wall_of_vines.png" },
+  { "type": "Creature", "name": "Centaur Courser", "count": 1, "manaCost": 3, "attack": 3, "hp": 3, "keywords": [], "imgPath": "/img/centaur_courser.png" },
+  { "type": "Creature", "name": "Giant Spider", "count": 1, "manaCost": 4, "attack": 2, "hp": 4, "keywords": ["FLYING"], "imgPath": "/img/giant_spider.png" },
+  { "type": "Creature", "name": "Bristling Boar", "count": 1, "manaCost": 4, "attack": 4, "hp": 3, "keywords": [], "imgPath": "/img/bristling_boar.png" },
+  { "type": "Creature", "name": "Ursine Champion", "count": 1, "manaCost": 4, "attack": 4, "hp": 4, "keywords": [], "imgPath": "/img/ursine_champion.png" },
+  { "type": "Creature", "name": "Thornhide Wolves", "count": 1, "manaCost": 5, "attack": 3, "hp": 6, "keywords": [], "imgPath": "/img/thornhide_wolves.png" },
+  { "type": "Creature", "name": "Colossal Dreadmaw", "count": 1, "manaCost": 6, "attack": 6, "hp": 6, "keywords": ["TRAMPLE"], "imgPath": "/img/colossal_dreadmaw.png" },
+  { "type": "Creature", "name": "Ghastbark Twins", "count": 1, "manaCost": 7, "attack": 7, "hp": 7, "keywords": ["TRAMPLE"], "imgPath": "/img/ghastbark_twins.png" },
+  { "type": "Creature", "name": "Aggressive Mammoth", "count": 1, "manaCost": 7, "attack": 8, "hp": 8, "keywords": ["TRAMPLE"], "imgPath": "/img/aggressive_mammoth.png" },
+  { "type": "Sorcery", "name": "Rabid Bite", "count": 1, "manaCost": 2, "imgPath": "/img/rabid_bite.png", "effects": [{ "type": "DAMAGE_ENEMY", "amount": 3 }] },
+  { "type": "Sorcery", "name": "Plummet", "count": 1, "manaCost": 2, "imgPath": "/img/plummet.png", "effects": [{ "type": "DAMAGE_ENEMY", "amount": 2 }] },
+  { "type": "Sorcery", "name": "Titanic Growth", "count": 2, "manaCost": 2, "imgPath": "/img/titanic_growth.png", "effects": [{ "type": "HEAL_PLAYER", "amount": 4 }] },
+  { "type": "Sorcery", "name": "Oakenform", "count": 1, "manaCost": 3, "imgPath": "/img/oakenform.png", "effects": [{ "type": "HEAL_PLAYER", "amount": 3 }] }
+]
