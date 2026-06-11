@@ -8,6 +8,7 @@ import ua.fiders.model.*;
 import ua.fiders.model.cards.*;
 import ua.fiders.model.effects.*;
 import ua.fiders.model.enums.*;
+import ua.fiders.network.AIGameSession;
 import ua.fiders.ui.panels.*;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.HBox;
@@ -51,6 +52,7 @@ public class GameController {
     private Player opponent;
 
     private GameEngine gameEngine;
+    private AIGameSession aiSession;
 
     public GameController() {
         rootLayout = new BorderPane();
@@ -135,31 +137,10 @@ public class GameController {
     }
 
     private void initMockData() {
-        player1 = new Player("Player");
-        opponent = new Player("AI Bot");
-
-        player1.setMaxMana(5);
-        player1.setCurrentMana(5);
-
-        class LandCard extends Card {
-            public LandCard(String name) { super(name, Type.Land, 0, new HashSet<>(), "abc"); }
-        }
-
-        Set<CardKeywords> flyingKeyword = new HashSet<>();
-        flyingKeyword.add(CardKeywords.Flying);
-
-        Set<CardKeywords> strongKeywords = new HashSet<>();
-        strongKeywords.add(CardKeywords.Lifelink);
-        strongKeywords.add(CardKeywords.Trample);
-
-        Card dragon = new CreatureCard("Black Dragon", 5, flyingKeyword, "abc", 5, 5);
-        Card paladin = new CreatureCard("Holy Paladin", 4, strongKeywords, "abc", 4, 4);
-        Card forest = new LandCard("Forest");
-        Card fireball = new SpellCard("Fireball", 2, "imgPath", List.of(new DamageEnemyEffect(5)));
-
-        player1.getHand().addAll(List.of(forest, paladin, dragon, fireball));
-
-        gameEngine = new GameEngine(player1, opponent);
+        aiSession = new AIGameSession("Player");
+        player1   = aiSession.getHuman();
+        opponent  = aiSession.getBot();
+        gameEngine = aiSession.getEngine();
     }
 
     public BorderPane getRootLayout() { return rootLayout; }
@@ -217,11 +198,20 @@ public class GameController {
      */
     private void advancePhase() {
         gameEngine.nextPhase();
+        controlPanel.updatePhaseText(gameEngine.getCurrentPhase().name());
 
-        String currentPhaseName = gameEngine.getCurrentPhase().name();
-        controlPanel.updatePhaseText(currentPhaseName);
+        // Якщо тепер хід бота — нехай грає автоматично
+        if (aiSession.isBotTurn()) {
+            aiSession.executeBotTurn();
+            // Оновити UI після ходу бота
+            playerInfoPanel.updateHp();
+            opponentInfoPanel.updateHp();
+            playerHandPanel.updateHand(player1.getHand());
+        }
 
-        System.out.println("Гру переведено у фазу: " + currentPhaseName);
+        if (aiSession.isGameOver()) {
+            System.out.println("Переможець: " + aiSession.getWinner().getName());
+        }
     }
 
     /**
