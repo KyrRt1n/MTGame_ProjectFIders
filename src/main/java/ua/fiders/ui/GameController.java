@@ -8,6 +8,7 @@ import ua.fiders.model.*;
 import ua.fiders.model.cards.*;
 import ua.fiders.model.effects.*;
 import ua.fiders.model.enums.*;
+import ua.fiders.network.AIGameSession;
 import ua.fiders.ui.panels.*;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.HBox;
@@ -19,9 +20,6 @@ import javafx.animation.TranslateTransition;
 import javafx.geometry.Bounds;
 import javafx.scene.input.MouseButton;
 import javafx.util.Duration;
-import java.util.List;
-import javafx.scene.media.Media;
-import javafx.scene.media.MediaPlayer;
 import java.net.URL;
 
 import java.util.HashSet;
@@ -43,30 +41,27 @@ public class GameController {
     private BattlefieldPanel battlefieldPanel;
     private GameControlPanel controlPanel;
 
-    // Логіка фаз
-    private final String[] phases = {"ПОЧАТОК ХОДУ", "ГОЛОВНА ФАЗА", "ФАЗА БОЮ", "ДРУГА ГОЛОВНА", "КІНЕЦЬ ХОДУ"};
-    private int currentPhaseIndex = 0;
 
     private Player player1;
     private Player opponent;
 
-    private GameEngine gameEngine;
+    private AIGameSession session;
 
     public GameController() {
         rootLayout = new BorderPane();
         rootLayout.setStyle("-fx-background-color: radial-gradient(center 50% 50%, radius 100%, #301515 0%, #050505 85%);");
 
-        initMockData();
+        session = new AIGameSession("Player");
+        player1 = session.getHuman();
+        opponent = session.getBot();
         setupUI();
         setupGameListener();
-        startBackgroundMusic();
-
-        gameEngine.start();
+        session.start();
     }
 
     private void setupGameListener() {
 
-        gameEngine.setListener(new GameListener() {
+        session.getEngine().setListener(new GameListener() {
 
             @Override
             public void onManaChanged(Player player) {
@@ -76,18 +71,46 @@ public class GameController {
 
             @Override
             public void onTurnChanged(Player newActivePlayer) {
-                controlPanel.updatePhaseText(gameEngine.getCurrentPhase().name() + "\nХід: " + newActivePlayer.getName());
+                controlPanel.updatePhaseText(getLocalizedPhaseName(session.getEngine().getCurrentPhase()) + "\nХід: " + newActivePlayer.getName());
             }
 
             @Override
             public void onPermanentEnteredBattlefield(Permanent permanent) {
-                // TODO: візуальне переміщення в Drag and Drop
+                CardView boardCardView = new CardView(permanent.getBaseCard());
+                boardCardView.setOnBoardMode();
+
+                boardCardView.setOnMouseClicked(mouseEvent -> {
+                    if (mouseEvent.getButton() == MouseButton.SECONDARY) {
+                        discardCard(boardCardView);
+                    } else {
+                        if (boardCardView.isTapped()) {
+                            boardCardView.untap();
+                            boardCardView.setHighlight(false);
+                        } else {
+                            boardCardView.tap();
+                            boardCardView.setHighlight(true);
+                        }
+                    }
+                });
+
+                if (permanent.getController() == player1) {
+                    battlefieldPanel.getPlayerZone().getChildren().add(boardCardView);
+                } else {
+                    battlefieldPanel.getOpponentZone().getChildren().add(boardCardView);
+                }
             }
 
             @Override
             public void onHpChanged(Player player){
                 opponentInfoPanel.updateHp();
                 playerInfoPanel.updateHp();
+            }
+
+            @Override
+            public void onHandUpdated(Player player) {
+                if (player == player1) {
+                    playerHandPanel.updateHand(player.getHand());
+                }
             }
         });
 
@@ -104,7 +127,7 @@ public class GameController {
         playerGraveyard = new GraveyardPanel("ВІДБІЙ");
         opponentGraveyard = new GraveyardPanel("ВІДБІЙ ВОРОГА");
 
-        controlPanel.updatePhaseText(phases[currentPhaseIndex]);
+        controlPanel.updatePhaseText(getLocalizedPhaseName(session.getEngine().getCurrentPhase()));
         controlPanel.setNextPhaseAction(this::advancePhase);
         playerHandPanel.updateHand(player1.getHand());
 
@@ -134,34 +157,6 @@ public class GameController {
         setupDragAndDrop();
     }
 
-    private void initMockData() {
-        player1 = new Player("Player");
-        opponent = new Player("AI Bot");
-
-        player1.setMaxMana(5);
-        player1.setCurrentMana(5);
-
-        class LandCard extends Card {
-            public LandCard(String name) { super(name, Type.Land, 0, new HashSet<>(), "abc"); }
-        }
-
-        Set<CardKeywords> flyingKeyword = new HashSet<>();
-        flyingKeyword.add(CardKeywords.Flying);
-
-        Set<CardKeywords> strongKeywords = new HashSet<>();
-        strongKeywords.add(CardKeywords.Lifelink);
-        strongKeywords.add(CardKeywords.Trample);
-
-        Card dragon = new CreatureCard("Black Dragon", 5, flyingKeyword, "abc", 5, 5);
-        Card paladin = new CreatureCard("Holy Paladin", 4, strongKeywords, "abc", 4, 4);
-        Card forest = new LandCard("Forest");
-        Card fireball = new SpellCard("Fireball", 2, "imgPath", List.of(new DamageEnemyEffect(5)));
-
-        player1.getHand().addAll(List.of(forest, paladin, dragon, fireball));
-
-        gameEngine = new GameEngine(player1, opponent);
-    }
-
     public BorderPane getRootLayout() { return rootLayout; }
 
     // Логіка приймання карти на ігрове поле (Drop Target)
@@ -181,30 +176,13 @@ public class GameController {
             if (event.getGestureSource() instanceof CardView dragCardView) {
                 Card playedCard = dragCardView.getCard();
 
-                if (gameEngine.playCard(playedCard)) {
+                if (session.getEngine().playCard(playedCard)) {
                     playerHandPanel.getChildren().remove(dragCardView);
-                    playerZone.getChildren().add(dragCardView);
-                    dragCardView.setOnBoardMode();
-
-                    dragCardView.setOnMouseClicked(mouseEvent -> {
-                        if (mouseEvent.getButton() == MouseButton.SECONDARY)
-                            discardCard(dragCardView);
-                        else {
-                            if (dragCardView.isTapped()) {
-                                dragCardView.untap();
-                                dragCardView.setHighlight(false);
-                            } else {
-                                dragCardView.tap();
-                                dragCardView.setHighlight(true);
-                            }
-                        }
-                    });
-
                     System.out.println("Успішно зіграно: " + playedCard.getName());
                     success = true;
-
-                } else
+                } else {
                     System.out.println("Неможливо зіграти " + playedCard.getName());
+                }
             }
 
             event.setDropCompleted(success);
@@ -216,12 +194,27 @@ public class GameController {
      * Логіка перемикання ігрових фаз
      */
     private void advancePhase() {
-        gameEngine.nextPhase();
+        GameEngine engine = session.getEngine();
+        engine.nextPhase();
 
-        String currentPhaseName = gameEngine.getCurrentPhase().name();
-        controlPanel.updatePhaseText(currentPhaseName);
+        String localizedPhaseName = getLocalizedPhaseName(engine.getCurrentPhase());
+        controlPanel.updatePhaseText(localizedPhaseName);
 
-        System.out.println("Гру переведено у фазу: " + currentPhaseName);
+        System.out.println("Гру переведено у фазу: " + localizedPhaseName);
+
+        if (session.isBotTurn()) {
+            System.out.println("[UI] Хід перейшов до бота. Блокування інтерфейсу...");
+            setInteractionEnabled(false);
+
+            new Thread(() -> {
+                session.executeBotTurn();
+                javafx.application.Platform.runLater(() -> {
+                    setInteractionEnabled(true);
+                    System.out.println("[UI] Хід повернувся до гравця. Інтерфейс розблоковано.");
+                    controlPanel.updatePhaseText(getLocalizedPhaseName(engine.getCurrentPhase()));
+                });
+            }).start();
+        }
     }
 
     /**
@@ -255,23 +248,19 @@ public class GameController {
         pt.play();
     }
 
-    private void startBackgroundMusic() {
-        try {
-            URL resource = getClass().getResource("/music/bg_music.mp3");
-            if (resource == null) {
-                System.out.println("Файл музики не знайдено!");
-                return;
-            }
+    private String getLocalizedPhaseName(Phase phase) {
+        return switch (phase) {
+            case START -> "ПОЧАТОК ХОДУ";
+            case MAIN -> "ГОЛОВНА ФАЗА";
+            case COMBAT -> "ФАЗА БОЮ";
+            case SECOND_MAIN -> "ДРУГА ГОЛОВНА";
+            case END -> "КІНЕЦЬ ХОДУ";
+        };
+    }
 
-            Media sound = new Media(resource.toString());
-            MediaPlayer mediaPlayer = new MediaPlayer(sound);
-
-            mediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
-            mediaPlayer.setVolume(0.4);
-
-            mediaPlayer.play();
-        } catch (Exception e) {
-            System.out.println("Помилка відтворення музики: " + e.getMessage());
-        }
+    private void setInteractionEnabled(boolean enabled) {
+        controlPanel.setDisable(!enabled);
+        playerHandPanel.setDisable(!enabled);
+        battlefieldPanel.getPlayerZone().setDisable(!enabled);
     }
 }
