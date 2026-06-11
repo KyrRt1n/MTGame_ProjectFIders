@@ -6,5 +6,4 @@ module ua.fiders {
 
     exports ua.fiders.ui;
     exports ua.fiders.data;
-    exports ua.fiders.network;
 }

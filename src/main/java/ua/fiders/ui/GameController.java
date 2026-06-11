@@ -6,9 +6,7 @@ import javafx.scene.layout.BorderPane;
 import ua.fiders.logic.*;
 import ua.fiders.model.*;
 import ua.fiders.model.cards.*;
-import ua.fiders.model.effects.*;
 import ua.fiders.model.enums.*;
-import ua.fiders.network.AIGameSession;
 import ua.fiders.ui.panels.*;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.HBox;
@@ -20,13 +18,14 @@ import javafx.animation.TranslateTransition;
 import javafx.geometry.Bounds;
 import javafx.scene.input.MouseButton;
 import javafx.util.Duration;
-import java.net.URL;
 
-import java.util.HashSet;
-import java.util.Set;
+import ua.fiders.data.DeckLoader;
+
+import java.util.Collections;
+import java.util.List;
 
 // Головний Контролер інтерфейсу.
-// Збирає всі панелі разом і забезпечує їхню взаємодію (наприклад, Drop карти на стіл).
+// Збирає всі панелі разом і забезпечує їхню взаємодію.
 public class GameController {
     private final BorderPane rootLayout;
 
@@ -45,24 +44,57 @@ public class GameController {
     private Player player1;
     private Player opponent;
 
-    private AIGameSession session;
+    private GameEngine gameEngine;
 
     public GameController() {
         rootLayout = new BorderPane();
         rootLayout.setStyle("-fx-background-color: radial-gradient(center 50% 50%, radius 100%, #301515 0%, #050505 85%);");
 
-        session = new AIGameSession("Player");
-        player1 = session.getHuman();
-        opponent = session.getBot();
+        initGame(); // Ініціалізація рушія та колод напряму
         setupUI();
         setupGameListener();
-        session.start();
+
+        gameEngine.start();
+    }
+
+    private void initGame() {
+        player1 = new Player("Player");
+        opponent = new Player("Opponent");
+
+        // Завантажуємо колоди через DeckLoader
+        DeckLoader deckLoader = new DeckLoader();
+
+        // ВКАЖИ ТУТ ПРАВИЛЬНИЙ ШЛЯХ ДО ТВОГО JSON ФАЙЛУ КОЛОДИ У RESOURCES!
+        String deckPath = "/decks/Green.json";
+
+        List<Card> humanDeck = deckLoader.loadDeck(deckPath);
+        List<Card> opponentDeck = deckLoader.loadDeck(deckPath);
+
+        // Обов'язково перемішуємо колоди, щоб вони не були однаковими кожну гру
+        Collections.shuffle(humanDeck);
+        Collections.shuffle(opponentDeck);
+
+        player1.setDeck(humanDeck);
+        opponent.setDeck(opponentDeck);
+
+        // Роздаємо стартові руки (7 карт)
+        dealStartingHand(player1, 7);
+        dealStartingHand(opponent, 7);
+
+        gameEngine = new GameEngine(player1, opponent);
+    }
+
+    private void dealStartingHand(Player player, int count) {
+        for (int i = 0; i < count; i++) {
+            Card drawn = player.drawnCard();
+            if (drawn != null) {
+                player.getHand().add(drawn);
+            }
+        }
     }
 
     private void setupGameListener() {
-
-        session.getEngine().setListener(new GameListener() {
-
+        gameEngine.setListener(new GameListener() {
             @Override
             public void onManaChanged(Player player) {
                 if (player == player1)
@@ -71,7 +103,7 @@ public class GameController {
 
             @Override
             public void onTurnChanged(Player newActivePlayer) {
-                controlPanel.updatePhaseText(getLocalizedPhaseName(session.getEngine().getCurrentPhase()) + "\nХід: " + newActivePlayer.getName());
+                controlPanel.updatePhaseText(getLocalizedPhaseName(gameEngine.getCurrentPhase()) + "\nХід: " + newActivePlayer.getName());
             }
 
             @Override
@@ -127,7 +159,7 @@ public class GameController {
         playerGraveyard = new GraveyardPanel("ВІДБІЙ");
         opponentGraveyard = new GraveyardPanel("ВІДБІЙ ВОРОГА");
 
-        controlPanel.updatePhaseText(getLocalizedPhaseName(session.getEngine().getCurrentPhase()));
+        controlPanel.updatePhaseText(getLocalizedPhaseName(gameEngine.getCurrentPhase()));
         controlPanel.setNextPhaseAction(this::advancePhase);
         playerHandPanel.updateHand(player1.getHand());
 
@@ -176,7 +208,7 @@ public class GameController {
             if (event.getGestureSource() instanceof CardView dragCardView) {
                 Card playedCard = dragCardView.getCard();
 
-                if (session.getEngine().playCard(playedCard)) {
+                if (gameEngine.playCard(playedCard)) {
                     playerHandPanel.getChildren().remove(dragCardView);
                     System.out.println("Успішно зіграно: " + playedCard.getName());
                     success = true;
@@ -194,27 +226,12 @@ public class GameController {
      * Логіка перемикання ігрових фаз
      */
     private void advancePhase() {
-        GameEngine engine = session.getEngine();
-        engine.nextPhase();
+        gameEngine.nextPhase();
 
-        String localizedPhaseName = getLocalizedPhaseName(engine.getCurrentPhase());
+        String localizedPhaseName = getLocalizedPhaseName(gameEngine.getCurrentPhase());
         controlPanel.updatePhaseText(localizedPhaseName);
 
         System.out.println("Гру переведено у фазу: " + localizedPhaseName);
-
-        if (session.isBotTurn()) {
-            System.out.println("[UI] Хід перейшов до бота. Блокування інтерфейсу...");
-            setInteractionEnabled(false);
-
-            new Thread(() -> {
-                session.executeBotTurn();
-                javafx.application.Platform.runLater(() -> {
-                    setInteractionEnabled(true);
-                    System.out.println("[UI] Хід повернувся до гравця. Інтерфейс розблоковано.");
-                    controlPanel.updatePhaseText(getLocalizedPhaseName(engine.getCurrentPhase()));
-                });
-            }).start();
-        }
     }
 
     /**
@@ -258,6 +275,7 @@ public class GameController {
         };
     }
 
+    // Для мультиплеєра знадобиться
     private void setInteractionEnabled(boolean enabled) {
         controlPanel.setDisable(!enabled);
         playerHandPanel.setDisable(!enabled);
