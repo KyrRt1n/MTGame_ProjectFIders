@@ -92,6 +92,17 @@ public class GameEngine {
         return true;
     }
 
+    private boolean playCreature(Player player, Card card) {
+        if (player.getCurrentMana() < card.getManaCost()) {
+            return false;
+        }
+        player.spendMana(card.getManaCost());
+        player.getHand().remove(card);
+        addPermanent(card, player);
+        notifyManaChanged(player);
+        return true;
+    }
+
     private boolean playSorcery(Player player, Card card, Permanent target1, Permanent target2) {
         if (player.getCurrentMana() < card.getManaCost()) return false;
 
@@ -100,6 +111,7 @@ public class GameEngine {
             player.getHand().remove(card);
 
             logMessage(player.getName() + " чаклує: " + spell.getName());
+
             for (CardEffect effect : spell.getEffects()) {
                 effectExecutor.execute(effect, player, state, target1, target2);
             }
