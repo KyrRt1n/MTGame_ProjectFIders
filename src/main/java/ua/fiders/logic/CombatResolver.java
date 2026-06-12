@@ -27,9 +27,7 @@ public class CombatResolver {
 
             Permanent blocker = blocks.get(attacker);
 
-            if (blocker != null
-                    && attacker.hasKeyword(CardKeywords.FLYING)
-                    && !blocker.hasKeyword(CardKeywords.FLYING)) {
+            if (blocker != null && !canBlock(blocker, attacker)) {
                 blocker = null;
             }
 
@@ -41,6 +39,14 @@ public class CombatResolver {
         }
 
         removeDeadCreatures(state);
+    }
+
+    private boolean canBlock(Permanent blocker, Permanent attacker) {
+        if (!attacker.hasKeyword(CardKeywords.FLYING)) {
+            return true;
+        }
+        return blocker.hasKeyword(CardKeywords.FLYING)
+                || blocker.hasKeyword(CardKeywords.REACH);
     }
 
     private void resolveUnblocked(Permanent attacker, Player defendingPlayer) {

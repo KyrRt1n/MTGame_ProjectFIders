@@ -58,6 +58,8 @@ public class PhaseManager {
         if (drawn != null) {
             active.getHand().add(drawn);
             engine.notifyHandUpdated(active);
+        } else {
+            engine.declareWinner(state.getOpponent(active));
         }
     }
 
@@ -71,6 +73,9 @@ public class PhaseManager {
     }
 
     private void onEnd() {
+        for (Permanent p : state.getBattlefield()) {
+            p.clearDamage();
+        }
     }
 
     private void passTurnToOpponent() {
@@ -78,7 +83,6 @@ public class PhaseManager {
         currentPhase = Phase.START;
         turnNumber++;
     }
-
 
     public Phase getCurrentPhase() {
         return currentPhase;

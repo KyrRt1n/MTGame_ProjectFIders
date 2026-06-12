@@ -19,6 +19,7 @@ public class GameEngine {
 
     private GameListener listener;
     private boolean landPlayedThisTurn;
+    private boolean gameOver;
 
     private final EffectExecutor effectExecutor = new EffectExecutor();
 
@@ -27,6 +28,7 @@ public class GameEngine {
         this.phaseManager = new PhaseManager(this, state);
         this.combatResolver = new CombatResolver();
         this.landPlayedThisTurn = false;
+        this.gameOver = false;
     }
 
     public void start() {
@@ -35,6 +37,9 @@ public class GameEngine {
     }
 
     public void nextPhase() {
+        if (gameOver) {
+            return;
+        }
         Player before = state.getCurrentPlayer();
         phaseManager.advance();
         if (state.getCurrentPlayer() != before) {
@@ -45,6 +50,9 @@ public class GameEngine {
     }
 
     public boolean playCard(Card card) {
+        if (gameOver) {
+            return false;
+        }
         Player active = state.getCurrentPlayer();
         if (!active.getHand().contains(card)) {
             return false;
@@ -90,16 +98,18 @@ public class GameEngine {
         player.spendMana(card.getManaCost());
         player.getHand().remove(card);
 
-        if(card instanceof SpellCard spell){
+        if (card instanceof SpellCard spell) {
             System.out.println(player.getName() + " чаклує: " + spell.getName());
-            for (CardEffect effect : spell.getEffects())
+            for (CardEffect effect : spell.getEffects()) {
                 effectExecutor.execute(effect, player, state);
+            }
         }
 
         player.getGraveyard().add(card);
 
         notifyManaChanged(player);
         notifyHpChanged(state.getOpponent(state.getCurrentPlayer()));
+        checkGameOver();
         return true;
     }
 
@@ -112,11 +122,37 @@ public class GameEngine {
     }
 
     public void resolveCombat(List<Permanent> attackers, Map<Permanent, Permanent> blocks) {
+        if (gameOver) {
+            return;
+        }
         combatResolver.resolveCombat(attackers, blocks, state);
+        notifyHpChanged(state.getPlayer1());
+        notifyHpChanged(state.getPlayer2());
+        checkGameOver();
+    }
+
+    private void checkGameOver() {
+        if (gameOver) {
+            return;
+        }
+        Player winner = getWinner();
+        if (winner != null) {
+            declareWinner(winner);
+        }
+    }
+
+    void declareWinner(Player winner) {
+        if (gameOver) {
+            return;
+        }
+        gameOver = true;
+        if (listener != null) {
+            listener.onGameOver(winner);
+        }
     }
 
     public boolean isGameOver() {
-        return state.getPlayer1().getHp() <= 0 || state.getPlayer2().getHp() <= 0;
+        return gameOver;
     }
 
     public Player getWinner() {
@@ -142,8 +178,15 @@ public class GameEngine {
     }
 
     private void notifyHpChanged(Player player) {
-        if (listener != null)
+        if (listener != null) {
             listener.onHpChanged(player);
+        }
+    }
+
+    public void notifyHandUpdated(Player player) {
+        if (listener != null) {
+            listener.onHandUpdated(player);
+        }
     }
 
     public GameState getState() {
@@ -156,11 +199,5 @@ public class GameEngine {
 
     public Player getCurrentPlayer() {
         return state.getCurrentPlayer();
-    }
-
-    public void notifyHandUpdated(Player player) {
-        if (listener != null) {
-            listener.onHandUpdated(player);
-        }
     }
 }
