@@ -41,7 +41,7 @@ public class CombatResolver {
         removeDeadCreatures(state);
     }
 
-    private boolean canBlock(Permanent blocker, Permanent attacker) {
+    public boolean canBlock(Permanent blocker, Permanent attacker) {
         if (!attacker.hasKeyword(CardKeywords.FLYING)) {
             return true;
         }
