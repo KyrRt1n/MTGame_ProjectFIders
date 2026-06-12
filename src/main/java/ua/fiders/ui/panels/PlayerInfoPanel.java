@@ -45,7 +45,7 @@ public class PlayerInfoPanel extends VBox {
         Label manaIcon = new Label("💧");
         manaIcon.setFont(Font.font("Arial", FontWeight.BOLD, 18));
 
-        manaLabel = new Label("5");
+        manaLabel = new Label("0");
         manaLabel.setTextFill(Color.web("#3498db"));
         manaLabel.setFont(Font.font("Arial", FontWeight.BOLD, 20));
         manaBox.getChildren().addAll(manaIcon, manaLabel);

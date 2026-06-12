@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Покриваємо:
  *  1. Атака без блокування → шкода гравцю
  *  2. Атака з блокуванням → шкода між істотами
- *  3. Perk Flying: наземний блокер ігнорується
+ *  3. Perk Flying: наземний блокер ігнорується (Reach — виняток)
  *  4. Perk Trample: надлишок шкоди проходить гравцю
  *  5. Perk Lifelink: власник відновлює HP
  *  6. Загибель істоти → переміщення на кладовище
@@ -103,7 +103,7 @@ class CombatResolverTest {
     @Test
     @DisplayName("Flying: наземний блокер не може блокувати — шкода йде гравцю")
     void flying_attacker_ignores_ground_blocker() {
-        Permanent attacker = makeCreature(attackingPlayer, "Dragon", 4, 4, CardKeywords.Flying);
+        Permanent attacker = makeCreature(attackingPlayer, "Dragon", 4, 4, CardKeywords.FLYING);
         Permanent blocker  = makeCreature(defendingPlayer, "Knight",  3, 3); // без Flying
 
         // Блокер призначений, але не має Flying — CombatResolver скасовує блок
@@ -121,8 +121,8 @@ class CombatResolverTest {
     @Test
     @DisplayName("Flying vs Flying: блок дійсний")
     void flying_vs_flying_block_is_valid() {
-        Permanent attacker = makeCreature(attackingPlayer, "Gryphon", 3, 3, CardKeywords.Flying);
-        Permanent blocker  = makeCreature(defendingPlayer, "Harpy",   3, 3, CardKeywords.Flying);
+        Permanent attacker = makeCreature(attackingPlayer, "Gryphon", 3, 3, CardKeywords.FLYING);
+        Permanent blocker  = makeCreature(defendingPlayer, "Harpy",   3, 3, CardKeywords.FLYING);
 
         resolver.resolveCombat(List.of(attacker), Map.of(attacker, blocker), state);
 
@@ -141,7 +141,7 @@ class CombatResolverTest {
     @Test
     @DisplayName("Trample: 5 атаки vs 2 hp блокера → 3 шкоди гравцю")
     void trample_excess_damage_hits_player() {
-        Permanent attacker = makeCreature(attackingPlayer, "Rhino", 5, 5, CardKeywords.Trample);
+        Permanent attacker = makeCreature(attackingPlayer, "Rhino", 5, 5, CardKeywords.TRAMPLE);
         Permanent blocker  = makeCreature(defendingPlayer, "Rat",   1, 2); // hp = 2
 
         resolver.resolveCombat(List.of(attacker), Map.of(attacker, blocker), state);
@@ -158,7 +158,7 @@ class CombatResolverTest {
     @Test
     @DisplayName("Trample без надлишку: шкода = hp блокера → гравець не отримує шкоди")
     void trample_no_excess_when_equal() {
-        Permanent attacker = makeCreature(attackingPlayer, "Boar", 3, 4, CardKeywords.Trample);
+        Permanent attacker = makeCreature(attackingPlayer, "Boar", 3, 4, CardKeywords.TRAMPLE);
         Permanent blocker  = makeCreature(defendingPlayer, "Guard", 1, 3); // hp = 3
 
         resolver.resolveCombat(List.of(attacker), Map.of(attacker, blocker), state);
@@ -176,7 +176,7 @@ class CombatResolverTest {
     @DisplayName("Lifelink: атакуючий лікує власника при нанесенні шкоди гравцю")
     void lifelink_heals_owner_on_unblocked_attack() {
         attackingPlayer.setHp(15); // Починаємо з 15 для наочності
-        Permanent attacker = makeCreature(attackingPlayer, "Vampire", 3, 3, CardKeywords.Lifelink);
+        Permanent attacker = makeCreature(attackingPlayer, "Vampire", 3, 3, CardKeywords.LIFELINK);
 
         resolver.resolveCombat(List.of(attacker), Collections.emptyMap(), state);
 
@@ -192,7 +192,7 @@ class CombatResolverTest {
     void lifelink_heals_owner_when_blocking() {
         defendingPlayer.setHp(14);
         Permanent attacker = makeCreature(attackingPlayer, "Warrior", 3, 3);
-        Permanent blocker  = makeCreature(defendingPlayer, "HolyGuard", 2, 4, CardKeywords.Lifelink);
+        Permanent blocker  = makeCreature(defendingPlayer, "HolyGuard", 2, 4, CardKeywords.LIFELINK);
 
         resolver.resolveCombat(List.of(attacker), Map.of(attacker, blocker), state);
 

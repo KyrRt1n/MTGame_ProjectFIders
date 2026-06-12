@@ -11,4 +11,9 @@ public interface GameListener {
     void onPermanentEnteredBattlefield(Permanent permanent);
 
     void onHpChanged(Player player);
+
+    void onHandUpdated(Player player);
+
+    default void onGameOver(Player winner) {
+    }
 }

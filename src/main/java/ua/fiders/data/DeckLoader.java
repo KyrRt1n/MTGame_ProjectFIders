@@ -8,7 +8,7 @@ import ua.fiders.model.cards.CreatureCard;
 import ua.fiders.model.cards.LandCard;
 import ua.fiders.model.cards.SpellCard;
 import ua.fiders.model.enums.CardKeywords;
-import ua.fiders.model.effects.CardEffect; // Імпортуємо ваш клас ефектів
+import ua.fiders.model.effects.*; // Імпортуємо ваш клас ефектів
 
 import java.io.InputStream;
 import java.io.IOException;
@@ -118,13 +118,22 @@ public class DeckLoader {
         List<CardEffect> effectsList = new ArrayList<>();
         if (node.has("effects") && node.get("effects").isArray()) {
             for (JsonNode effectNode : node.get("effects")) {
-                try {
-                    // Мапимо JSON-об'єкт ефекту прямо у ваш клас CardEffect за допомогою Jackson
-                    CardEffect effect = objectMapper.treeToValue(effectNode, CardEffect.class);
+
+                String effectType = effectNode.get("type").asText();
+                int amount = effectNode.has("amount") ? effectNode.get("amount").asInt() : 0;
+
+                // через CardEffect інтерфейс воно не вдупляло шо куди створювати, так шо тут вирішуємо
+                CardEffect effect = switch (effectType) {
+                    case "DAMAGE_ENEMY" -> new DamageEnemyEffect(amount);
+                    case "HEAL_PLAYER"  -> new HealPlayerEffect(amount);
+                    default -> {
+                        System.err.println("Попередження: Невідомий тип ефекту: " + effectType);
+                        yield null;
+                    }
+                };
+
+                if (effect != null)
                     effectsList.add(effect);
-                } catch (Exception e) {
-                    System.err.println("Помилка під час парсингу ефекту для карти: " + e.getMessage());
-                }
             }
         }
         return effectsList;

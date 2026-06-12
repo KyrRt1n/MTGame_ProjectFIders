@@ -8,11 +8,13 @@ import ua.fiders.model.enums.Phase;
 
 public class PhaseManager {
 
+    private final GameEngine engine;
     private final GameState state;
     private Phase currentPhase;
     private int turnNumber;
 
-    public PhaseManager(GameState state) {
+    public PhaseManager(GameEngine engine, GameState state) {
+        this.engine = engine;
         this.state = state;
         this.currentPhase = Phase.START;
         this.turnNumber = 1;
@@ -55,6 +57,9 @@ public class PhaseManager {
         Card drawn = active.drawnCard();
         if (drawn != null) {
             active.getHand().add(drawn);
+            engine.notifyHandUpdated(active);
+        } else {
+            engine.declareWinner(state.getOpponent(active));
         }
     }
 
@@ -68,6 +73,9 @@ public class PhaseManager {
     }
 
     private void onEnd() {
+        for (Permanent p : state.getBattlefield()) {
+            p.clearDamage();
+        }
     }
 
     private void passTurnToOpponent() {
@@ -75,7 +83,6 @@ public class PhaseManager {
         currentPhase = Phase.START;
         turnNumber++;
     }
-
 
     public Phase getCurrentPhase() {
         return currentPhase;

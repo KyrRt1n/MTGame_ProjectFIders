@@ -6,7 +6,6 @@ import javafx.scene.layout.BorderPane;
 import ua.fiders.logic.*;
 import ua.fiders.model.*;
 import ua.fiders.model.cards.*;
-import ua.fiders.model.effects.*;
 import ua.fiders.model.enums.*;
 import ua.fiders.ui.panels.*;
 import javafx.scene.input.TransferMode;
@@ -19,16 +18,14 @@ import javafx.animation.TranslateTransition;
 import javafx.geometry.Bounds;
 import javafx.scene.input.MouseButton;
 import javafx.util.Duration;
-import java.util.List;
-import javafx.scene.media.Media;
-import javafx.scene.media.MediaPlayer;
-import java.net.URL;
 
-import java.util.HashSet;
-import java.util.Set;
+import ua.fiders.data.DeckLoader;
+
+import java.util.Collections;
+import java.util.List;
 
 // Головний Контролер інтерфейсу.
-// Збирає всі панелі разом і забезпечує їхню взаємодію (наприклад, Drop карти на стіл).
+// Збирає всі панелі разом і забезпечує їхню взаємодію.
 public class GameController {
     private final BorderPane rootLayout;
 
@@ -43,9 +40,6 @@ public class GameController {
     private BattlefieldPanel battlefieldPanel;
     private GameControlPanel controlPanel;
 
-    // Логіка фаз
-    private final String[] phases = {"ПОЧАТОК ХОДУ", "ГОЛОВНА ФАЗА", "ФАЗА БОЮ", "ДРУГА ГОЛОВНА", "КІНЕЦЬ ХОДУ"};
-    private int currentPhaseIndex = 0;
 
     private Player player1;
     private Player opponent;
@@ -56,18 +50,51 @@ public class GameController {
         rootLayout = new BorderPane();
         rootLayout.setStyle("-fx-background-color: radial-gradient(center 50% 50%, radius 100%, #301515 0%, #050505 85%);");
 
-        initMockData();
+        initGame(); // Ініціалізація рушія та колод напряму
         setupUI();
         setupGameListener();
-        startBackgroundMusic();
 
         gameEngine.start();
     }
 
+    private void initGame() {
+        player1 = new Player("Player");
+        opponent = new Player("Opponent");
+
+        // Завантажуємо колоди через DeckLoader
+        DeckLoader deckLoader = new DeckLoader();
+
+        // ВКАЖИ ТУТ ПРАВИЛЬНИЙ ШЛЯХ ДО ТВОГО JSON ФАЙЛУ КОЛОДИ У RESOURCES!
+        String deckPath = "/decks/Green.json";
+
+        List<Card> humanDeck = deckLoader.loadDeck(deckPath);
+        List<Card> opponentDeck = deckLoader.loadDeck(deckPath);
+
+        // Обов'язково перемішуємо колоди, щоб вони не були однаковими кожну гру
+        Collections.shuffle(humanDeck);
+        Collections.shuffle(opponentDeck);
+
+        player1.setDeck(humanDeck);
+        opponent.setDeck(opponentDeck);
+
+        // Роздаємо стартові руки (7 карт)
+        dealStartingHand(player1, 7);
+        dealStartingHand(opponent, 7);
+
+        gameEngine = new GameEngine(player1, opponent);
+    }
+
+    private void dealStartingHand(Player player, int count) {
+        for (int i = 0; i < count; i++) {
+            Card drawn = player.drawnCard();
+            if (drawn != null) {
+                player.getHand().add(drawn);
+            }
+        }
+    }
+
     private void setupGameListener() {
-
         gameEngine.setListener(new GameListener() {
-
             @Override
             public void onManaChanged(Player player) {
                 if (player == player1)
@@ -76,18 +103,46 @@ public class GameController {
 
             @Override
             public void onTurnChanged(Player newActivePlayer) {
-                controlPanel.updatePhaseText(gameEngine.getCurrentPhase().name() + "\nХід: " + newActivePlayer.getName());
+                controlPanel.updatePhaseText(getLocalizedPhaseName(gameEngine.getCurrentPhase()) + "\nХід: " + newActivePlayer.getName());
             }
 
             @Override
             public void onPermanentEnteredBattlefield(Permanent permanent) {
-                // TODO: візуальне переміщення в Drag and Drop
+                CardView boardCardView = new CardView(permanent.getBaseCard());
+                boardCardView.setOnBoardMode();
+
+                boardCardView.setOnMouseClicked(mouseEvent -> {
+                    if (mouseEvent.getButton() == MouseButton.SECONDARY) {
+                        discardCard(boardCardView);
+                    } else {
+                        if (boardCardView.isTapped()) {
+                            boardCardView.untap();
+                            boardCardView.setHighlight(false);
+                        } else {
+                            boardCardView.tap();
+                            boardCardView.setHighlight(true);
+                        }
+                    }
+                });
+
+                if (permanent.getController() == player1) {
+                    battlefieldPanel.getPlayerZone().getChildren().add(boardCardView);
+                } else {
+                    battlefieldPanel.getOpponentZone().getChildren().add(boardCardView);
+                }
             }
 
             @Override
             public void onHpChanged(Player player){
                 opponentInfoPanel.updateHp();
                 playerInfoPanel.updateHp();
+            }
+
+            @Override
+            public void onHandUpdated(Player player) {
+                if (player == player1) {
+                    playerHandPanel.updateHand(player.getHand());
+                }
             }
         });
 
@@ -104,7 +159,7 @@ public class GameController {
         playerGraveyard = new GraveyardPanel("ВІДБІЙ");
         opponentGraveyard = new GraveyardPanel("ВІДБІЙ ВОРОГА");
 
-        controlPanel.updatePhaseText(phases[currentPhaseIndex]);
+        controlPanel.updatePhaseText(getLocalizedPhaseName(gameEngine.getCurrentPhase()));
         controlPanel.setNextPhaseAction(this::advancePhase);
         playerHandPanel.updateHand(player1.getHand());
 
@@ -134,34 +189,6 @@ public class GameController {
         setupDragAndDrop();
     }
 
-    private void initMockData() {
-        player1 = new Player("Player");
-        opponent = new Player("AI Bot");
-
-        player1.setMaxMana(5);
-        player1.setCurrentMana(5);
-
-        class LandCard extends Card {
-            public LandCard(String name) { super(name, Type.Land, 0, new HashSet<>(), "abc"); }
-        }
-
-        Set<CardKeywords> flyingKeyword = new HashSet<>();
-        flyingKeyword.add(CardKeywords.Flying);
-
-        Set<CardKeywords> strongKeywords = new HashSet<>();
-        strongKeywords.add(CardKeywords.Lifelink);
-        strongKeywords.add(CardKeywords.Trample);
-
-        Card dragon = new CreatureCard("Black Dragon", 5, flyingKeyword, "abc", 5, 5);
-        Card paladin = new CreatureCard("Holy Paladin", 4, strongKeywords, "abc", 4, 4);
-        Card forest = new LandCard("Forest");
-        Card fireball = new SpellCard("Fireball", 2, "imgPath", List.of(new DamageEnemyEffect(5)));
-
-        player1.getHand().addAll(List.of(forest, paladin, dragon, fireball));
-
-        gameEngine = new GameEngine(player1, opponent);
-    }
-
     public BorderPane getRootLayout() { return rootLayout; }
 
     // Логіка приймання карти на ігрове поле (Drop Target)
@@ -183,28 +210,17 @@ public class GameController {
 
                 if (gameEngine.playCard(playedCard)) {
                     playerHandPanel.getChildren().remove(dragCardView);
-                    playerZone.getChildren().add(dragCardView);
-                    dragCardView.setOnBoardMode();
 
-                    dragCardView.setOnMouseClicked(mouseEvent -> {
-                        if (mouseEvent.getButton() == MouseButton.SECONDARY)
-                            discardCard(dragCardView);
-                        else {
-                            if (dragCardView.isTapped()) {
-                                dragCardView.untap();
-                                dragCardView.setHighlight(false);
-                            } else {
-                                dragCardView.tap();
-                                dragCardView.setHighlight(true);
-                            }
-                        }
-                    });
+                    if (playedCard.getType() == Type.Sorcery) {
+                        dragCardView.setOnBoardMode();
+                        playerGraveyard.addCardToTop(dragCardView);
+                    }
 
                     System.out.println("Успішно зіграно: " + playedCard.getName());
                     success = true;
-
-                } else
+                } else {
                     System.out.println("Неможливо зіграти " + playedCard.getName());
+                }
             }
 
             event.setDropCompleted(success);
@@ -218,10 +234,10 @@ public class GameController {
     private void advancePhase() {
         gameEngine.nextPhase();
 
-        String currentPhaseName = gameEngine.getCurrentPhase().name();
-        controlPanel.updatePhaseText(currentPhaseName);
+        String localizedPhaseName = getLocalizedPhaseName(gameEngine.getCurrentPhase());
+        controlPanel.updatePhaseText(localizedPhaseName);
 
-        System.out.println("Гру переведено у фазу: " + currentPhaseName);
+        System.out.println("Гру переведено у фазу: " + localizedPhaseName);
     }
 
     /**
@@ -255,23 +271,20 @@ public class GameController {
         pt.play();
     }
 
-    private void startBackgroundMusic() {
-        try {
-            URL resource = getClass().getResource("/music/bg_music.mp3");
-            if (resource == null) {
-                System.out.println("Файл музики не знайдено!");
-                return;
-            }
+    private String getLocalizedPhaseName(Phase phase) {
+        return switch (phase) {
+            case START -> "ПОЧАТОК ХОДУ";
+            case MAIN -> "ГОЛОВНА ФАЗА";
+            case COMBAT -> "ФАЗА БОЮ";
+            case SECOND_MAIN -> "ДРУГА ГОЛОВНА";
+            case END -> "КІНЕЦЬ ХОДУ";
+        };
+    }
 
-            Media sound = new Media(resource.toString());
-            MediaPlayer mediaPlayer = new MediaPlayer(sound);
-
-            mediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
-            mediaPlayer.setVolume(0.4);
-
-            mediaPlayer.play();
-        } catch (Exception e) {
-            System.out.println("Помилка відтворення музики: " + e.getMessage());
-        }
+    // Для мультиплеєра знадобиться
+    private void setInteractionEnabled(boolean enabled) {
+        controlPanel.setDisable(!enabled);
+        playerHandPanel.setDisable(!enabled);
+        battlefieldPanel.getPlayerZone().setDisable(!enabled);
     }
 }

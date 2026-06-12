@@ -27,9 +27,7 @@ public class CombatResolver {
 
             Permanent blocker = blocks.get(attacker);
 
-            if (blocker != null
-                    && attacker.hasKeyword(CardKeywords.Flying)
-                    && !blocker.hasKeyword(CardKeywords.Flying)) {
+            if (blocker != null && !canBlock(blocker, attacker)) {
                 blocker = null;
             }
 
@@ -41,6 +39,14 @@ public class CombatResolver {
         }
 
         removeDeadCreatures(state);
+    }
+
+    public boolean canBlock(Permanent blocker, Permanent attacker) {
+        if (!attacker.hasKeyword(CardKeywords.FLYING)) {
+            return true;
+        }
+        return blocker.hasKeyword(CardKeywords.FLYING)
+                || blocker.hasKeyword(CardKeywords.REACH);
     }
 
     private void resolveUnblocked(Permanent attacker, Player defendingPlayer) {
@@ -57,7 +63,7 @@ public class CombatResolver {
 
         blocker.takeDamage(attackerPower);
 
-        if (attacker.hasKeyword(CardKeywords.Trample) && attackerPower > blockerHpBefore) {
+        if (attacker.hasKeyword(CardKeywords.TRAMPLE) && attackerPower > blockerHpBefore) {
             int excess = attackerPower - blockerHpBefore;
             dealDamageToPlayer(defendingPlayer, excess);
         }
@@ -73,7 +79,7 @@ public class CombatResolver {
     }
 
     private void applyLifelink(Permanent creature, int damageDealt) {
-        if (creature.hasKeyword(CardKeywords.Lifelink) && damageDealt > 0) {
+        if (creature.hasKeyword(CardKeywords.LIFELINK) && damageDealt > 0) {
             Player owner = creature.getController();
             owner.setHp(owner.getHp() + damageDealt);
         }
