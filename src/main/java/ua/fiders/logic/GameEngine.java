@@ -60,18 +60,19 @@ public class GameEngine {
     }
 
     public boolean playCard(Card card) {
-        if (gameOver) {
-            return false;
-        }
+        return playCard(card, null, null);
+    }
+
+    public boolean playCard(Card card, Permanent target1, Permanent target2) {
+        if (gameOver) return false;
+
         Player active = state.getCurrentPlayer();
-        if (!active.getHand().contains(card)) {
-            return false;
-        }
+        if (!active.getHand().contains(card)) return false;
 
         return switch (card.getType()) {
             case Land     -> playLand(active, card);
             case Creature -> playCreature(active, card);
-            case Sorcery  -> playSorcery(active, card);
+            case Sorcery  -> playSorcery(active, card, target1, target2); // Передаем цели сюда
         };
     }
 
@@ -101,26 +102,27 @@ public class GameEngine {
         return true;
     }
 
-    private boolean playSorcery(Player player, Card card) {
-        if (player.getCurrentMana() < card.getManaCost()) {
-            return false;
-        }
-        player.spendMana(card.getManaCost());
-        player.getHand().remove(card);
+    private boolean playSorcery(Player player, Card card, Permanent target1, Permanent target2) {
+        if (player.getCurrentMana() < card.getManaCost()) return false;
 
         if (card instanceof SpellCard spell) {
+            player.spendMana(card.getManaCost());
+            player.getHand().remove(card);
+
             System.out.println(player.getName() + " чаклує: " + spell.getName());
             for (CardEffect effect : spell.getEffects()) {
-                effectExecutor.execute(effect, player, state);
+                effectExecutor.execute(effect, player, state, target1, target2);
             }
+            player.getGraveyard().add(card);
+
+            combatResolver.removeDeadCreatures(state);
+
+            notifyManaChanged(player);
+            notifyHpChanged(state.getOpponent(state.getCurrentPlayer()));
+            checkGameOver();
+            return true;
         }
-
-        player.getGraveyard().add(card);
-
-        notifyManaChanged(player);
-        notifyHpChanged(state.getOpponent(state.getCurrentPlayer()));
-        checkGameOver();
-        return true;
+        return false;
     }
 
     private void addPermanent(Card card, Player controller) {
