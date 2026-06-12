@@ -5,6 +5,7 @@ import javafx.scene.Scene;
 import javafx.scene.media.MediaPlayer;
 import javafx.stage.Stage;
 import javafx.scene.image.Image;
+import ua.fiders.network.NetworkLauncher;
 
 public class MainApp extends Application {
 
@@ -23,6 +24,9 @@ public class MainApp extends Application {
         MainMenu mainMenu = new MainMenu(this::startGame, primaryStage);
         Scene menuScene = new Scene(mainMenu, 1200, 800);
 
+        String cssPath = getClass().getResource("/css/style.css").toExternalForm();
+        menuScene.getStylesheets().add(cssPath);
+
         MediaPlayer player = AudioManager.getInstance().getBgMediaPlayer();
         if (player != null) {
             mainMenu.getVolumeSlider().setValue(player.getVolume() * 100);
@@ -39,16 +43,18 @@ public class MainApp extends Application {
      * Цей метод викликається лише тоді, коли користувач тисне "Грати" в меню
      */
     private void startGame() {
-        System.out.println("[MainApp] Ініціалізація ігрового рушія...");
+        System.out.println("[MainApp] Ініціалізація мережевої гри...");
 
-        GameController controller = new GameController();
-        Scene gameScene = new Scene(controller.getRootLayout(), 1200, 800);
-        boolean isFullScreen = primaryStage.isFullScreen();
-        primaryStage.setScene(gameScene);
+        NetworkLauncher.launch((session, isHost, seed) -> {
+            GameController controller = new GameController(session, isHost, seed);
+            Scene gameScene = new Scene(controller.getRootLayout(), 1200, 800);
+            gameScene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
+            boolean isFullScreen = primaryStage.isFullScreen();
+            primaryStage.setScene(gameScene);
 
-        if (isFullScreen) {
-            primaryStage.setFullScreen(true);
-        }
+            if (isFullScreen)
+                primaryStage.setFullScreen(true);
+        });
     }
 
     public static void main(String[] args) {

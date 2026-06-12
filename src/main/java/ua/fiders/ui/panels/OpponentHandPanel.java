@@ -13,10 +13,10 @@ import javafx.scene.text.FontWeight;
 public class OpponentHandPanel extends HBox {
 
     public OpponentHandPanel(int cardCount) {
-        super(-30); // Щільніший нахлест, ніж у гравця
+        super(-30);
         setAlignment(Pos.CENTER);
-        setPadding(new Insets(10));
-        setMinHeight(160);
+        setPadding(new Insets(5));
+        setMinHeight(150);
 
         for (int i = 0; i < cardCount; i++) {
             getChildren().add(createCardBack());
@@ -41,5 +41,12 @@ public class OpponentHandPanel extends HBox {
 
         back.getChildren().add(logo);
         return back;
+    }
+
+    public void updateHandSize(int cardCount) {
+        getChildren().clear();
+        for (int i = 0; i < cardCount; i++) {
+            getChildren().add(createCardBack());
+        }
     }
 }

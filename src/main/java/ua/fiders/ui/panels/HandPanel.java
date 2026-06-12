@@ -14,10 +14,10 @@ import java.util.List;
 public class HandPanel extends HBox {
 
     public HandPanel() {
-        super(-40); // Ефект "віяла" (нахлест карт)
+        super(-40);
         setAlignment(Pos.CENTER);
-        setPadding(new Insets(20));
-        setMinHeight(250);
+        setPadding(new Insets(10));
+        setMinHeight(210);
     }
 
     public void updateHand(List<Card> cards) {

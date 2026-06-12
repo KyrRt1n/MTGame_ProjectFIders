@@ -12,10 +12,11 @@ import javafx.scene.text.FontWeight;
 public class GameControlPanel extends VBox {
 
     private final Label phaseLabel;
+    private final Label timerLabel;
     private final Button nextPhaseBtn;
 
     public GameControlPanel() {
-        setSpacing(20);
+        setSpacing(15);
         setAlignment(Pos.CENTER);
         setPadding(new Insets(20));
         setPrefWidth(220);
@@ -36,14 +37,22 @@ public class GameControlPanel extends VBox {
         phaseLabel.setWrapText(true);
         phaseLabel.setAlignment(Pos.CENTER);
 
+        timerLabel = new Label("Час: 120");
+        timerLabel.setTextFill(Color.web("#ff4757"));
+        timerLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+
         nextPhaseBtn = new Button("НАСТУПНА ФАЗА");
         nextPhaseBtn.setStyle("-fx-background-color: #3498db; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px; -fx-padding: 10 20 10 20; -fx-background-radius: 5;");
 
-        getChildren().addAll(titleLabel, phaseLabel, nextPhaseBtn);
+        getChildren().addAll(titleLabel, phaseLabel, timerLabel, nextPhaseBtn);
     }
 
     public void updatePhaseText(String text) {
         phaseLabel.setText(text);
+    }
+
+    public void updateTimerText(int seconds) {
+        timerLabel.setText("Час: " + seconds);
     }
 
     public void setNextPhaseAction(Runnable action) {
