@@ -243,7 +243,7 @@ public class GameController {
 
             @Override
             public void onMessage(String msg) {
-                battleLogPanel.addLogMessage("ℹ️ " + msg);
+                battleLogPanel.addLogMessage(msg);
             }
         });
     }
@@ -396,7 +396,7 @@ public class GameController {
         BorderPane.setMargin(leftPanel, new Insets(20, 0, 20, 20));
         rootLayout.setLeft(leftPanel);
 
-        BorderPane.setMargin(controlPanel, new Insets(20, 20, 20, 0));
+        BorderPane.setMargin(controlPanel, new Insets(20, 20, 20, 20));
         rootLayout.setRight(controlPanel);
 
         setupDragAndDrop();

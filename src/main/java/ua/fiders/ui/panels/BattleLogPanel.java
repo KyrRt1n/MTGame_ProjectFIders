@@ -3,6 +3,7 @@ package ua.fiders.ui.panels;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.Priority;
@@ -35,15 +36,41 @@ public class BattleLogPanel extends VBox {
 
         logView = new ListView<>();
         logView.setStyle("-fx-background-color: #2c2c2e; " +
-                "-fx-control-inner-background: #2c2c2e; " +
-                "-fx-text-fill: white;");
+                "-fx-control-inner-background: #2c2c2e;");
 
-        // Змушуємо список розтягуватись, займаючи весь вільний простір по вертикалі
+        logView.setCellFactory(list -> new ListCell<String>() {
+            private final Label label = new Label();
+
+            {
+                // перенос по словах
+                label.setWrapText(true);
+                label.setTextFill(Color.WHITE);
+
+                // Віднімаємо 35 пікселів, щоб залишити місце для вертикального скрол-бару і відступів
+                label.maxWidthProperty().bind(list.widthProperty().subtract(35));
+            }
+
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+
+                if (empty || item == null) {
+                    setGraphic(null);
+                    setText(null);
+                    setStyle("-fx-background-color: transparent;");
+                } else {
+                    label.setText(item);
+                    setGraphic(label);
+                    setText(null);
+                    setStyle("-fx-background-color: transparent; -fx-padding: 4 0 4 0;");
+                }
+            }
+        });
+
         VBox.setVgrow(logView, Priority.ALWAYS);
 
         inputField = new TextField();
         inputField.setPromptText("Написати в чат...");
-        // Темна тема для поля вводу
         inputField.setStyle("-fx-background-color: #3a3a3c; " +
                 "-fx-text-fill: white; " +
                 "-fx-prompt-text-fill: gray; " +

@@ -14,30 +14,25 @@ public class BattlefieldPanel extends VBox {
     private final HBox playerZone;
 
     public BattlefieldPanel() {
-        setSpacing(20);
+        setSpacing(10);
         setAlignment(Pos.CENTER);
-        setPadding(new Insets(10));
+        setPadding(new Insets(5));
 
         opponentZone = createZone("#2c3e50");
         playerZone = createZone("#27ae60");
 
-        // Захищаємо макет від розтягування мільйоном карт
         ScrollPane opponentScroll = createScrollPane(opponentZone);
         ScrollPane playerScroll = createScrollPane(playerZone);
 
         getChildren().addAll(opponentScroll, playerScroll);
     }
 
-    /**
-     * РОЗУМНЕ ДОДАВАННЯ: Якщо це Земля і така вже є, кладемо поверх (у стопку).
-     */
     public void addCard(CardView view, boolean isPlayer) {
         HBox zone = isPlayer ? playerZone : opponentZone;
 
         if (view.getCard().getType() == Type.Land) {
             String landName = view.getCard().getName();
 
-            // Шукаємо, чи є вже стопка VBox для землі з таким іменем
             for (Node node : zone.getChildren()) {
                 if (node instanceof VBox landStack) {
                     if (!landStack.getChildren().isEmpty()) {
@@ -50,7 +45,6 @@ public class BattlefieldPanel extends VBox {
                 }
             }
 
-            // -170 означає, що наступна карта перекриє попередню, залишивши 30px видимості
             VBox newLandStack = new VBox(-170);
             newLandStack.setAlignment(Pos.TOP_CENTER);
             newLandStack.getChildren().add(view);
@@ -61,9 +55,6 @@ public class BattlefieldPanel extends VBox {
         }
     }
 
-    /**
-     * РОЗУМНЕ ВИДАЛЕННЯ: Шукає карту як на самому столі, так і всередині стопок.
-     */
     public void removeCard(CardView view) {
         removeFromZone(playerZone, view);
         removeFromZone(opponentZone, view);
@@ -79,7 +70,6 @@ public class BattlefieldPanel extends VBox {
             if (node instanceof VBox landStack) {
                 if (landStack.getChildren().contains(viewToFind)) {
                     landStack.getChildren().remove(viewToFind);
-
                     if (landStack.getChildren().isEmpty()) {
                         zone.getChildren().remove(landStack);
                     }
@@ -102,9 +92,16 @@ public class BattlefieldPanel extends VBox {
     private HBox createZone(String borderColor) {
         HBox zone = new HBox(15);
         zone.setAlignment(Pos.CENTER);
-        zone.setMinHeight(220);
+        zone.setMinHeight(205);
         zone.setMinWidth(750);
-        zone.setStyle("-fx-background-color: rgba(0, 0, 0, 0.2); -fx-border-color: " + borderColor + "; -fx-border-width: 2; -fx-border-radius: 10; -fx-border-style: dashed;");
+
+        zone.setStyle("-fx-background-color: rgba(0, 0, 0, 0.2); " +
+                "-fx-border-color: " + borderColor + "; " +
+                "-fx-border-width: 2; " +
+                "-fx-border-insets: 1; " +
+                "-fx-border-radius: 10; " +
+                "-fx-background-radius: 10; " +
+                "-fx-border-style: dashed;");
         return zone;
     }
 

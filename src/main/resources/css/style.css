@@ -1,0 +1,42 @@
+/* Робимо сам ScrollPane та його внутрішній Viewport повністю прозорими */
+.scroll-pane {
+    -fx-background-color: transparent;
+    -fx-control-inner-background: transparent;
+}
+
+.scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+
+/* Прибираємо фон самої смуги прокрутки */
+.scroll-bar:horizontal, .scroll-bar:vertical {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar:horizontal .track, .scroll-bar:vertical .track {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+/* Налаштування повзунка (Темно-бордовий) */
+.scroll-bar:horizontal .thumb, .scroll-bar:vertical .thumb {
+    -fx-background-color: rgba(90, 20, 25, 0.6);
+    -fx-background-radius: 10px;
+    -fx-border-radius: 10px;
+}
+
+/* Ефект підсвічування при наведенні миші на повзунок */
+.scroll-bar:horizontal .thumb:hover, .scroll-bar:vertical .thumb:hover {
+    -fx-background-color: rgba(140, 30, 35, 0.9);
+}
+
+/* Ховаємо стандартні сірі кнопки-стрілочки по краях скролу */
+.scroll-bar .increment-button, .scroll-bar .decrement-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.scroll-bar .increment-arrow, .scroll-bar .decrement-arrow {
+    -fx-shape: " "; /* Заміняємо іконку стрілочки на порожнечу */
+    -fx-padding: 0;
+}

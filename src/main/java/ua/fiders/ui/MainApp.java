@@ -24,6 +24,9 @@ public class MainApp extends Application {
         MainMenu mainMenu = new MainMenu(this::startGame, primaryStage);
         Scene menuScene = new Scene(mainMenu, 1200, 800);
 
+        String cssPath = getClass().getResource("/css/style.css").toExternalForm();
+        menuScene.getStylesheets().add(cssPath);
+
         MediaPlayer player = AudioManager.getInstance().getBgMediaPlayer();
         if (player != null) {
             mainMenu.getVolumeSlider().setValue(player.getVolume() * 100);
@@ -45,6 +48,7 @@ public class MainApp extends Application {
         NetworkLauncher.launch((session, isHost, seed) -> {
             GameController controller = new GameController(session, isHost, seed);
             Scene gameScene = new Scene(controller.getRootLayout(), 1200, 800);
+            gameScene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
             boolean isFullScreen = primaryStage.isFullScreen();
             primaryStage.setScene(gameScene);
 
