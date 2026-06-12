@@ -4,12 +4,20 @@ import ua.fiders.model.*;
 import ua.fiders.model.cards.*;
 import ua.fiders.model.effects.*;
 
+import java.util.function.Consumer;
+
 public class EffectExecutor {
+
+    private final Consumer<String> logger;
+
+    public EffectExecutor(Consumer<String> logger) {
+        this.logger = logger;
+    }
 
     public void execute(CardEffect effect, Player caster, GameState state) {
         switch (effect) {
             case DrawCardEffect draw -> {
-                System.out.println(caster.getName() + " бере " + draw.amount() + " карт!");
+                logger.accept(caster.getName() + " бере " + draw.amount() + " карт!");
                 for (int i = 0; i < draw.amount(); i++) {
                     Card drawn = caster.drawnCard();
                     if (drawn == null) break;
@@ -18,12 +26,12 @@ public class EffectExecutor {
             }
             case HealPlayerEffect heal -> {
                 caster.setHp(caster.getHp() + heal.amount());
-                System.out.println(caster.getName() + " лікується на " + heal.amount() + ". ХП: " + caster.getHp());
+                logger.accept(caster.getName() + " лікується на " + heal.amount() + ". ХП: " + caster.getHp());
             }
             case DamageEnemyEffect damage -> {
                 Player enemy = state.getOpponent(caster);
                 enemy.setHp(enemy.getHp() - damage.amount());
-                System.out.println("Ворог отримує " + damage.amount() + " урону! ХП ворога: " + enemy.getHp());
+                logger.accept("Ворог отримує " + damage.amount() + " урону! ХП ворога: " + enemy.getHp());
             }
         }
     }

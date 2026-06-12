@@ -14,6 +14,8 @@ public interface GameListener {
 
     void onHandUpdated(Player player);
 
+    void onMessage(String message);
+
     default void onGameOver(Player winner) {
     }
 }

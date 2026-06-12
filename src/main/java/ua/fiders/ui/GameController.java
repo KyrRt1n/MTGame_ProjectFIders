@@ -1,11 +1,15 @@
 package ua.fiders.ui;
 
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.layout.BorderPane;
+import javafx.util.Duration;
 import ua.fiders.logic.*;
 import ua.fiders.model.*;
 import ua.fiders.model.cards.*;
@@ -56,6 +60,11 @@ public class GameController {
     private Button confirmAttackBtn;
     private Button fightBtn;
 
+    private BattleLogPanel battleLogPanel;
+
+    private Timeline turnTimer;
+    private int timeLeft = 60;
+
     public GameController(NetworkSession session, boolean isHost, long seed) {
         this.session = session;
         this.isHost = isHost;
@@ -71,6 +80,7 @@ public class GameController {
 
         gameEngine.start();
         updateControls();
+        setupTimer();
     }
 
     private void initGame() {
@@ -160,6 +170,11 @@ public class GameController {
                 executeCombatBothSides();
             }
             case "SEED" -> { }
+
+            case "CHAT" -> {
+                String chatMsg = message.substring(5);
+                battleLogPanel.addLogMessage("Суперник: " + chatMsg);
+            }
             default -> System.out.println("Невідоме повідомлення: " + message);
         }
     }
@@ -217,12 +232,18 @@ public class GameController {
 
             @Override
             public void onGameOver(Player winner) {
+                if (turnTimer != null) turnTimer.stop();
                 setInteractionEnabled(false);
                 Alert alert = new Alert(Alert.AlertType.INFORMATION);
                 alert.setTitle("Гру завершено");
                 alert.setHeaderText(winner == localPlayer ? "ПЕРЕМОГА!" : "ПОРАЗКА");
                 alert.setContentText("Переможець: " + winner.getName());
                 alert.show();
+            }
+
+            @Override
+            public void onMessage(String msg) {
+                battleLogPanel.addLogMessage("ℹ️ " + msg);
             }
         });
     }
@@ -332,6 +353,13 @@ public class GameController {
         playerGraveyard = new GraveyardPanel("ВІДБІЙ");
         opponentGraveyard = new GraveyardPanel("ВІДБІЙ ВОРОГА");
 
+        battleLogPanel = new BattleLogPanel();
+        // Підключаємо відправку повідомлень до мережі
+        battleLogPanel.setOnMessageSent(text -> {
+            battleLogPanel.addLogMessage("Ти: " + text);
+            session.send("CHAT " + text);
+        });
+
         controlPanel.updatePhaseText(getLocalizedPhaseName(gameEngine.getCurrentPhase()));
         controlPanel.setNextPhaseAction(this::advancePhase);
         playerHandPanel.updateHand(localPlayer.getHand());
@@ -363,7 +391,8 @@ public class GameController {
         rootLayout.setBottom(playerHandPanel);
 
         VBox leftPanel = new VBox(20);
-        leftPanel.getChildren().addAll(opponentInfoPanel, playerInfoPanel);
+        VBox.setVgrow(battleLogPanel, Priority.ALWAYS);
+        leftPanel.getChildren().addAll(opponentInfoPanel, battleLogPanel, playerInfoPanel);
         BorderPane.setMargin(leftPanel, new Insets(20, 0, 20, 20));
         rootLayout.setLeft(leftPanel);
 
@@ -434,6 +463,12 @@ public class GameController {
 
         controlPanel.updatePhaseText(getLocalizedPhaseName(gameEngine.getCurrentPhase())
                 + "\nХід: " + (isMyTurn() ? "ТВІЙ" : "суперника"));
+
+        timeLeft = 60;
+        controlPanel.updateTimerText(timeLeft);
+        if (turnTimer != null) {
+            turnTimer.playFromStart();
+        }
     }
 
     private void updateControls() {
@@ -458,5 +493,24 @@ public class GameController {
         controlPanel.setDisable(!enabled);
         playerHandPanel.setDisable(!enabled);
         battlefieldPanel.getPlayerZone().setDisable(!enabled);
+    }
+
+    private void setupTimer() {
+        turnTimer = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
+            timeLeft--;
+            controlPanel.updateTimerText(timeLeft);
+
+            if (timeLeft <= 0) {
+                if (isMyTurn()) {
+                    System.out.println("Час вийшов! Автоматичний пропуск фази.");
+                    advancePhase();
+                } else {
+                    timeLeft = 0;
+                    controlPanel.updateTimerText(0);
+                }
+            }
+        }));
+        turnTimer.setCycleCount(Animation.INDEFINITE);
+        turnTimer.play();
     }
 }

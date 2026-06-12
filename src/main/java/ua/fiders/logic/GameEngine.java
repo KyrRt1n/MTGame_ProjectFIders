@@ -30,7 +30,7 @@ public class GameEngine {
     private final Set<Permanent> declaredAttackers = new LinkedHashSet<>();
     private final Map<Permanent, Permanent> declaredBlocks = new LinkedHashMap<>();
 
-    private final EffectExecutor effectExecutor = new EffectExecutor();
+    private final EffectExecutor effectExecutor;
 
     public GameEngine(Player player1, Player player2) {
         this.state = new GameState(player1, player2);
@@ -38,6 +38,7 @@ public class GameEngine {
         this.combatResolver = new CombatResolver();
         this.landPlayedThisTurn = false;
         this.gameOver = false;
+        this.effectExecutor = new EffectExecutor(this::logMessage);
     }
 
     public void start() {
@@ -109,7 +110,7 @@ public class GameEngine {
         player.getHand().remove(card);
 
         if (card instanceof SpellCard spell) {
-            System.out.println(player.getName() + " чаклує: " + spell.getName());
+            logMessage(player.getName() + " чаклує: " + spell.getName());
             for (CardEffect effect : spell.getEffects()) {
                 effectExecutor.execute(effect, player, state);
             }
@@ -265,6 +266,16 @@ public class GameEngine {
     public void notifyHandUpdated(Player player) {
         if (listener != null) {
             listener.onHandUpdated(player);
+        }
+    }
+
+    /**
+     * Відправляє системні повідомлення в UI
+     */
+    public void logMessage(String msg) {
+        System.out.println(msg);
+        if (listener != null) {
+            listener.onMessage(msg);
         }
     }
 
