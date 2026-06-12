@@ -96,6 +96,8 @@ public class GameEngine {
                 effectExecutor.execute(effect, player, state);
         }
 
+        player.getGraveyard().add(card);
+
         notifyManaChanged(player);
         notifyHpChanged(state.getOpponent(state.getCurrentPlayer()));
         return true;

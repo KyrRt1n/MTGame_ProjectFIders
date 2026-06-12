@@ -210,6 +210,12 @@ public class GameController {
 
                 if (gameEngine.playCard(playedCard)) {
                     playerHandPanel.getChildren().remove(dragCardView);
+
+                    if (playedCard.getType() == Type.Sorcery) {
+                        dragCardView.setOnBoardMode();
+                        playerGraveyard.addCardToTop(dragCardView);
+                    }
+
                     System.out.println("Успішно зіграно: " + playedCard.getName());
                     success = true;
                 } else {
