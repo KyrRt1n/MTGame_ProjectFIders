@@ -1,31 +1,31 @@
 package ua.fiders.ui;
 
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.layout.BorderPane;
 import ua.fiders.logic.*;
 import ua.fiders.model.*;
 import ua.fiders.model.cards.*;
 import ua.fiders.model.enums.*;
+import ua.fiders.network.NetworkSession;
 import ua.fiders.ui.panels.*;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import javafx.animation.ParallelTransition;
-import javafx.animation.RotateTransition;
-import javafx.animation.TranslateTransition;
-import javafx.geometry.Bounds;
 import javafx.scene.input.MouseButton;
-import javafx.util.Duration;
 
 import ua.fiders.data.DeckLoader;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
-// Головний Контролер інтерфейсу.
-// Збирає всі панелі разом і забезпечує їхню взаємодію.
 public class GameController {
     private final BorderPane rootLayout;
 
@@ -40,48 +40,63 @@ public class GameController {
     private BattlefieldPanel battlefieldPanel;
     private GameControlPanel controlPanel;
 
-
-    private Player player1;
-    private Player opponent;
+    private Player localPlayer;
+    private Player remotePlayer;
 
     private GameEngine gameEngine;
 
-    public GameController() {
+    private final NetworkSession session;
+    private final boolean isHost;
+    private final long seed;
+
+    private final Map<Permanent, CardView> boardViews = new HashMap<>();
+    private Permanent selectedAttacker;
+    private boolean attackConfirmed;
+
+    private Button confirmAttackBtn;
+    private Button fightBtn;
+
+    public GameController(NetworkSession session, boolean isHost, long seed) {
+        this.session = session;
+        this.isHost = isHost;
+        this.seed = seed;
+
         rootLayout = new BorderPane();
         rootLayout.setStyle("-fx-background-color: radial-gradient(center 50% 50%, radius 100%, #301515 0%, #050505 85%);");
 
-        initGame(); // Ініціалізація рушія та колод напряму
+        initGame();
         setupUI();
         setupGameListener();
+        setupNetwork();
 
         gameEngine.start();
+        updateControls();
     }
 
     private void initGame() {
-        player1 = new Player("Player");
-        opponent = new Player("Opponent");
+        Player hostPlayer  = new Player("Host");
+        Player guestPlayer = new Player("Guest");
 
-        // Завантажуємо колоди через DeckLoader
+        localPlayer  = isHost ? hostPlayer : guestPlayer;
+        remotePlayer = isHost ? guestPlayer : hostPlayer;
+
         DeckLoader deckLoader = new DeckLoader();
-
-        // ВКАЖИ ТУТ ПРАВИЛЬНИЙ ШЛЯХ ДО ТВОГО JSON ФАЙЛУ КОЛОДИ У RESOURCES!
         String deckPath = "/decks/Green.json";
 
-        List<Card> humanDeck = deckLoader.loadDeck(deckPath);
-        List<Card> opponentDeck = deckLoader.loadDeck(deckPath);
+        List<Card> hostDeck  = deckLoader.loadDeck(deckPath);
+        List<Card> guestDeck = deckLoader.loadDeck(deckPath);
 
-        // Обов'язково перемішуємо колоди, щоб вони не були однаковими кожну гру
-        Collections.shuffle(humanDeck);
-        Collections.shuffle(opponentDeck);
+        Random rng = new Random(seed);
+        Collections.shuffle(hostDeck, rng);
+        Collections.shuffle(guestDeck, rng);
 
-        player1.setDeck(humanDeck);
-        opponent.setDeck(opponentDeck);
+        hostPlayer.setDeck(hostDeck);
+        guestPlayer.setDeck(guestDeck);
 
-        // Роздаємо стартові руки (7 карт)
-        dealStartingHand(player1, 7);
-        dealStartingHand(opponent, 7);
+        dealStartingHand(hostPlayer, 7);
+        dealStartingHand(guestPlayer, 7);
 
-        gameEngine = new GameEngine(player1, opponent);
+        gameEngine = new GameEngine(hostPlayer, guestPlayer);
     }
 
     private void dealStartingHand(Player player, int count) {
@@ -93,64 +108,227 @@ public class GameController {
         }
     }
 
+    // Мережа
+
+    private void setupNetwork() {
+        session.setMessageHandler(message ->
+                Platform.runLater(() -> handleNetworkMessage(message)));
+
+        session.setOnDisconnected(() -> Platform.runLater(() -> {
+            setInteractionEnabled(false);
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("З'єднання втрачено");
+            alert.setHeaderText("Суперник від'єднався");
+            alert.show();
+        }));
+    }
+
+    private void handleNetworkMessage(String message) {
+        String[] parts = message.trim().split("\\s+");
+        switch (parts[0]) {
+            case "PLAY_CARD" -> {
+                int handIndex = Integer.parseInt(parts[1]);
+                Card card = gameEngine.getCurrentPlayer().getHand().get(handIndex);
+                gameEngine.playCard(card);
+            }
+            case "NEXT_PHASE" -> {
+                gameEngine.nextPhase();
+                onPhaseChangedLocally();
+            }
+            case "ATTACKER" -> {
+                Permanent p = battlefieldAt(Integer.parseInt(parts[1]));
+                if (p != null) {
+                    boolean attacking = gameEngine.toggleAttacker(p);
+                    CardView view = boardViews.get(p);
+                    if (view != null) view.setHighlight(attacking);
+                }
+            }
+            case "BLOCK" -> {
+                Permanent attacker = battlefieldAt(Integer.parseInt(parts[1]));
+                Permanent blocker  = battlefieldAt(Integer.parseInt(parts[2]));
+                if (attacker != null && blocker != null
+                        && gameEngine.assignBlocker(attacker, blocker)) {
+                    CardView view = boardViews.get(blocker);
+                    if (view != null) view.setHighlight(true);
+                }
+            }
+            case "ATTACK_DONE" -> {
+                attackConfirmed = true;
+                updateControls();
+            }
+            case "COMBAT" -> {
+                executeCombatBothSides();
+            }
+            case "SEED" -> { }
+            default -> System.out.println("Невідоме повідомлення: " + message);
+        }
+    }
+
+    private Permanent battlefieldAt(int index) {
+        List<Permanent> battlefield = gameEngine.getState().getBattlefield();
+        if (index < 0 || index >= battlefield.size()) {
+            return null;
+        }
+        return battlefield.get(index);
+    }
+
+    private int battlefieldIndexOf(Permanent permanent) {
+        return gameEngine.getState().getBattlefield().indexOf(permanent);
+    }
+
+    private boolean isMyTurn() {
+        return gameEngine.getCurrentPlayer() == localPlayer;
+    }
+
+    // Слухач рушія
+
     private void setupGameListener() {
         gameEngine.setListener(new GameListener() {
             @Override
             public void onManaChanged(Player player) {
-                if (player == player1)
+                if (player == localPlayer)
                     playerInfoPanel.updateMana(player.getCurrentMana());
             }
 
             @Override
             public void onTurnChanged(Player newActivePlayer) {
-                controlPanel.updatePhaseText(getLocalizedPhaseName(gameEngine.getCurrentPhase()) + "\nХід: " + newActivePlayer.getName());
+                controlPanel.updatePhaseText(getLocalizedPhaseName(gameEngine.getCurrentPhase())
+                        + "\nХід: " + (newActivePlayer == localPlayer ? "ТВІЙ" : "суперника"));
+                updateControls();
             }
 
             @Override
             public void onPermanentEnteredBattlefield(Permanent permanent) {
-                CardView boardCardView = new CardView(permanent.getBaseCard());
-                boardCardView.setOnBoardMode();
-
-                boardCardView.setOnMouseClicked(mouseEvent -> {
-                    if (mouseEvent.getButton() == MouseButton.SECONDARY) {
-                        discardCard(boardCardView);
-                    } else {
-                        if (boardCardView.isTapped()) {
-                            boardCardView.untap();
-                            boardCardView.setHighlight(false);
-                        } else {
-                            boardCardView.tap();
-                            boardCardView.setHighlight(true);
-                        }
-                    }
-                });
-
-                if (permanent.getController() == player1) {
-                    battlefieldPanel.getPlayerZone().getChildren().add(boardCardView);
-                } else {
-                    battlefieldPanel.getOpponentZone().getChildren().add(boardCardView);
-                }
+                addPermanentView(permanent);
             }
 
             @Override
-            public void onHpChanged(Player player){
+            public void onHpChanged(Player player) {
                 opponentInfoPanel.updateHp();
                 playerInfoPanel.updateHp();
             }
 
             @Override
             public void onHandUpdated(Player player) {
-                if (player == player1) {
+                if (player == localPlayer) {
                     playerHandPanel.updateHand(player.getHand());
                 }
             }
-        });
 
+            @Override
+            public void onGameOver(Player winner) {
+                setInteractionEnabled(false);
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Гру завершено");
+                alert.setHeaderText(winner == localPlayer ? "ПЕРЕМОГА!" : "ПОРАЗКА");
+                alert.setContentText("Переможець: " + winner.getName());
+                alert.show();
+            }
+        });
     }
 
+    private void addPermanentView(Permanent permanent) {
+        CardView boardCardView = new CardView(permanent.getBaseCard());
+        boardCardView.setOnBoardMode();
+        boardViews.put(permanent, boardCardView);
+
+        boardCardView.setOnMouseClicked(mouseEvent -> {
+            if (mouseEvent.getButton() == MouseButton.PRIMARY) {
+                handleBoardCardClick(permanent, boardCardView);
+            }
+        });
+
+        if (permanent.getController() == localPlayer) {
+            battlefieldPanel.getPlayerZone().getChildren().add(boardCardView);
+        } else {
+            battlefieldPanel.getOpponentZone().getChildren().add(boardCardView);
+        }
+    }
+
+    // Бій
+
+    private void handleBoardCardClick(Permanent permanent, CardView view) {
+        if (gameEngine.getCurrentPhase() != Phase.COMBAT) {
+            return;
+        }
+
+        if (isMyTurn() && !attackConfirmed) {
+            if (permanent.getController() != localPlayer) {
+                return;
+            }
+            boolean nowAttacking = gameEngine.toggleAttacker(permanent);
+            view.setHighlight(nowAttacking);
+            session.send("ATTACKER " + battlefieldIndexOf(permanent));
+            return;
+        }
+
+        if (!isMyTurn() && attackConfirmed) {
+            if (permanent.getController() != localPlayer) {
+                selectedAttacker = gameEngine.getDeclaredAttackers().contains(permanent)
+                        ? permanent : null;
+                return;
+            }
+            if (selectedAttacker == null) {
+                System.out.println("Спочатку клікни ворожого атакуючого");
+                return;
+            }
+            if (gameEngine.assignBlocker(selectedAttacker, permanent)) {
+                view.setHighlight(true);
+                session.send("BLOCK " + battlefieldIndexOf(selectedAttacker)
+                        + " " + battlefieldIndexOf(permanent));
+            }
+        }
+    }
+
+    private void confirmAttackClicked() {
+        attackConfirmed = true;
+        session.send("ATTACK_DONE");
+        updateControls();
+    }
+
+    private void fightClicked() {
+        session.send("COMBAT");
+        executeCombatBothSides();
+    }
+
+    private void executeCombatBothSides() {
+        gameEngine.executeCombat();
+        attackConfirmed = false;
+        selectedAttacker = null;
+        syncBattlefield();
+        updateControls();
+    }
+
+    private void syncBattlefield() {
+        List<Permanent> alive = gameEngine.getState().getBattlefield();
+
+        boardViews.entrySet().removeIf(entry -> {
+            Permanent p = entry.getKey();
+            CardView view = entry.getValue();
+
+            if (!alive.contains(p)) {
+                battlefieldPanel.getPlayerZone().getChildren().remove(view);
+                battlefieldPanel.getOpponentZone().getChildren().remove(view);
+                if (p.getController() == localPlayer) {
+                    playerGraveyard.addCardToTop(view);
+                } else {
+                    opponentGraveyard.addCardToTop(view);
+                }
+                return true;
+            }
+
+            if (p.isTapped() && !view.isTapped()) view.tap();
+            if (!p.isTapped() && view.isTapped()) view.untap();
+            view.setHighlight(false);
+            return false;
+        });
+    }
+
+    // UI
+
     private void setupUI() {
-        playerInfoPanel = new PlayerInfoPanel(player1);
-        opponentInfoPanel = new OpponentInfoPanel(opponent);
+        playerInfoPanel = new PlayerInfoPanel(localPlayer);
+        opponentInfoPanel = new OpponentInfoPanel(remotePlayer);
         playerHandPanel = new HandPanel();
         battlefieldPanel = new BattlefieldPanel();
         controlPanel = new GameControlPanel();
@@ -161,16 +339,27 @@ public class GameController {
 
         controlPanel.updatePhaseText(getLocalizedPhaseName(gameEngine.getCurrentPhase()));
         controlPanel.setNextPhaseAction(this::advancePhase);
-        playerHandPanel.updateHand(player1.getHand());
+        playerHandPanel.updateHand(localPlayer.getHand());
 
-        // Спаковуємо стіл та кладовища разом
+        confirmAttackBtn = new Button("ПІДТВЕРДИТИ АТАКУ");
+        confirmAttackBtn.setStyle("-fx-background-color: #f1c40f; -fx-text-fill: black; -fx-font-weight: bold;");
+        confirmAttackBtn.setPrefWidth(180);
+        confirmAttackBtn.setOnAction(e -> confirmAttackClicked());
+
+        fightBtn = new Button("БІЙ!");
+        fightBtn.setStyle("-fx-background-color: #ff4757; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14;");
+        fightBtn.setPrefWidth(180);
+        fightBtn.setOnAction(e -> fightClicked());
+
+        controlPanel.getChildren().addAll(confirmAttackBtn, fightBtn);
+
         VBox graveyardsBox = new VBox(20);
         graveyardsBox.setAlignment(Pos.CENTER);
         graveyardsBox.getChildren().addAll(opponentGraveyard, playerGraveyard);
 
         HBox centerLayout = new HBox(20);
         centerLayout.setAlignment(Pos.CENTER);
-        HBox.setHgrow(battlefieldPanel, Priority.ALWAYS); // Стіл розтягується
+        HBox.setHgrow(battlefieldPanel, Priority.ALWAYS);
         centerLayout.getChildren().addAll(battlefieldPanel, graveyardsBox);
 
         // Розставляємо на головному екрані
@@ -208,18 +397,20 @@ public class GameController {
             if (event.getGestureSource() instanceof CardView dragCardView) {
                 Card playedCard = dragCardView.getCard();
 
-                if (gameEngine.playCard(playedCard)) {
-                    playerHandPanel.getChildren().remove(dragCardView);
+                if (isMyTurn()) {
+                    int handIndex = localPlayer.getHand().indexOf(playedCard);
 
-                    if (playedCard.getType() == Type.Sorcery) {
-                        dragCardView.setOnBoardMode();
-                        playerGraveyard.addCardToTop(dragCardView);
+                    if (handIndex >= 0 && gameEngine.playCard(playedCard)) {
+                        session.send("PLAY_CARD " + handIndex);
+                        playerHandPanel.getChildren().remove(dragCardView);
+
+                        if (playedCard.getType() == Type.Sorcery) {
+                            dragCardView.setOnBoardMode();
+                            playerGraveyard.addCardToTop(dragCardView);
+                        }
+
+                        success = true;
                     }
-
-                    System.out.println("Успішно зіграно: " + playedCard.getName());
-                    success = true;
-                } else {
-                    System.out.println("Неможливо зіграти " + playedCard.getName());
                 }
             }
 
@@ -232,43 +423,29 @@ public class GameController {
      * Логіка перемикання ігрових фаз
      */
     private void advancePhase() {
+        if (!isMyTurn()) {
+            return;
+        }
         gameEngine.nextPhase();
-
-        String localizedPhaseName = getLocalizedPhaseName(gameEngine.getCurrentPhase());
-        controlPanel.updatePhaseText(localizedPhaseName);
-
-        System.out.println("Гру переведено у фазу: " + localizedPhaseName);
+        session.send("NEXT_PHASE");
+        onPhaseChangedLocally();
     }
 
-    /**
-     * Анімує переміщення карти зі столу у відбій гравця
-     */
-    private void discardCard(CardView cardView) {
-        // Отримуємо абсолютні координати карти та кладовища на екрані
-        Bounds cardBounds = cardView.localToScene(cardView.getBoundsInLocal());
-        Bounds gyBounds = playerGraveyard.localToScene(playerGraveyard.getBoundsInLocal());
+    private void onPhaseChangedLocally() {
+        attackConfirmed = false;
+        selectedAttacker = null;
+        syncBattlefield();
+        updateControls();
 
-        double moveX = gyBounds.getCenterX() - cardBounds.getCenterX();
-        double moveY = gyBounds.getCenterY() - cardBounds.getCenterY();
+        controlPanel.updatePhaseText(getLocalizedPhaseName(gameEngine.getCurrentPhase())
+                + "\nХід: " + (isMyTurn() ? "ТВІЙ" : "суперника"));
+    }
 
-        // Анімація польоту
-        TranslateTransition tt = new TranslateTransition(Duration.millis(400), cardView);
-        tt.setByX(moveX);
-        tt.setByY(moveY);
+    private void updateControls() {
+        boolean combat = gameEngine.getCurrentPhase() == Phase.COMBAT;
 
-        // Анімація обертання (ефект того, що карта відлітає)
-        RotateTransition rt = new RotateTransition(Duration.millis(400), cardView);
-        rt.setByAngle(360);
-
-        // Запускаємо їх паралельно
-        ParallelTransition pt = new ParallelTransition(tt, rt);
-        pt.setOnFinished(e -> {
-            // Коли карта долетіла, фізично переміщуємо її в ієрархії JavaFX
-            battlefieldPanel.getPlayerZone().getChildren().remove(cardView);
-            playerGraveyard.addCardToTop(cardView);
-        });
-
-        pt.play();
+        confirmAttackBtn.setDisable(!(combat && isMyTurn() && !attackConfirmed));
+        fightBtn.setDisable(!(combat && !isMyTurn() && attackConfirmed));
     }
 
     private String getLocalizedPhaseName(Phase phase) {
