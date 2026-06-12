@@ -8,7 +8,7 @@ import ua.fiders.model.cards.CreatureCard;
 import ua.fiders.model.cards.LandCard;
 import ua.fiders.model.cards.SpellCard;
 import ua.fiders.model.enums.CardKeywords;
-import ua.fiders.model.effects.*; // Імпортуємо ваш клас ефектів
+import ua.fiders.model.effects.*;
 
 import java.io.InputStream;
 import java.io.IOException;
@@ -120,12 +120,41 @@ public class DeckLoader {
             for (JsonNode effectNode : node.get("effects")) {
 
                 String effectType = effectNode.get("type").asText();
-                int amount = effectNode.has("amount") ? effectNode.get("amount").asInt() : 0;
 
-                // через CardEffect інтерфейс воно не вдупляло шо куди створювати, так шо тут вирішуємо
                 CardEffect effect = switch (effectType) {
-                    case "DAMAGE_ENEMY" -> new DamageEnemyEffect(amount);
-                    case "HEAL_PLAYER"  -> new HealPlayerEffect(amount);
+                    case "DAMAGE_ENEMY" -> {
+                        int amount = effectNode.has("amount") ? effectNode.get("amount").asInt() : 0;
+                        yield new DamageEnemyEffect(amount);
+                    }
+                    case "HEAL_PLAYER" -> {
+                        int amount = effectNode.has("amount") ? effectNode.get("amount").asInt() : 0;
+                        yield new HealPlayerEffect(amount);
+                    }
+                    case "DRAW_CARD" -> {
+                        int amount = effectNode.has("amount") ? effectNode.get("amount").asInt() : 1;
+                        yield new DrawCardEffect(amount);
+                    }
+                    case "BUFF_STATS" -> {
+                        // Чисто берем новые параметры для баффов
+                        int attack = effectNode.has("attackAmount") ? effectNode.get("attackAmount").asInt() : 0;
+                        int hp = effectNode.has("hpAmount") ? effectNode.get("hpAmount").asInt() : 0;
+                        boolean isPermanent = effectNode.has("isPermanent") && effectNode.get("isPermanent").asBoolean();
+
+                        yield new BuffStatsEffect(attack, hp, isPermanent);
+                    }
+                    case "DESTROY_TARGET" -> {
+                        CardKeywords requiredKeyword = null;
+                        if (effectNode.has("requiredKeyword")) {
+                            try {
+                                requiredKeyword = CardKeywords.valueOf(effectNode.get("requiredKeyword").asText().toUpperCase());
+                            } catch (IllegalArgumentException e) {
+                                System.err.println("Попередження: Невідомий ківорд для DESTROY_TARGET: " + effectNode.get("requiredKeyword").asText());
+                            }
+                        }
+                        yield new DestroyTargetEffect(requiredKeyword);
+                    }
+                    case "BITE_EFFECT" -> new BiteEffect();
+
                     default -> {
                         System.err.println("Попередження: Невідомий тип ефекту: " + effectType);
                         yield null;
