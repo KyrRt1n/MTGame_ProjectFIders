@@ -43,9 +43,9 @@ public class OpponentHandPanel extends HBox {
         return back;
     }
 
-    public void updateHandSize(int count) {
+    public void updateHandSize(int cardCount) {
         getChildren().clear();
-        for (int i = 0; i < count; i++) {
+        for (int i = 0; i < cardCount; i++) {
             getChildren().add(createCardBack());
         }
     }

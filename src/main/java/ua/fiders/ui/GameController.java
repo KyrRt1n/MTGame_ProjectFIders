@@ -139,12 +139,9 @@ public class GameController {
             case "PLAY_CARD" -> {
                 int handIndex = Integer.parseInt(parts[1]);
                 Card card = gameEngine.getCurrentPlayer().getHand().get(handIndex);
+
                 if (gameEngine.playCard(card)) {
-                    if (card.getType() == Type.Sorcery) {
-                        CardView spellView = new CardView(card);
-                        spellView.setOnBoardMode();
-                        opponentGraveyard.addCardToTop(spellView);
-                    }
+                    opponentHandPanel.updateHandSize(gameEngine.getCurrentPlayer().getHand().size());
                 }
             }
             case "NEXT_PHASE" -> {
@@ -357,7 +354,7 @@ public class GameController {
         battlefieldPanel = new BattlefieldPanel();
         controlPanel = new GameControlPanel();
 
-        opponentHandPanel = new OpponentHandPanel(5);
+        opponentHandPanel = new OpponentHandPanel(remotePlayer.getHand().size());
         playerGraveyard = new GraveyardPanel("ВІДБІЙ");
         opponentGraveyard = new GraveyardPanel("ВІДБІЙ ВОРОГА");
 
