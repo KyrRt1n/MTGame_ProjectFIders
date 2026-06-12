@@ -63,7 +63,7 @@ public class GameController {
     private BattleLogPanel battleLogPanel;
 
     private Timeline turnTimer;
-    private int timeLeft = 60;
+    private int timeLeft = 120;
 
     public GameController(NetworkSession session, boolean isHost, long seed) {
         this.session = session;
@@ -469,7 +469,7 @@ public class GameController {
         controlPanel.updatePhaseText(getLocalizedPhaseName(gameEngine.getCurrentPhase())
                 + "\nХід: " + (isMyTurn() ? "ТВІЙ" : "суперника"));
 
-        timeLeft = 60;
+        timeLeft = 120;
         controlPanel.updateTimerText(timeLeft);
         if (turnTimer != null) {
             turnTimer.playFromStart();

@@ -37,7 +37,7 @@ public class GameControlPanel extends VBox {
         phaseLabel.setWrapText(true);
         phaseLabel.setAlignment(Pos.CENTER);
 
-        timerLabel = new Label("Час: 60");
+        timerLabel = new Label("Час: 120");
         timerLabel.setTextFill(Color.web("#ff4757"));
         timerLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
 
