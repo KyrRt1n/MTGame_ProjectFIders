@@ -238,11 +238,7 @@ public class GameController {
             }
         });
 
-        if (permanent.getController() == localPlayer) {
-            battlefieldPanel.getPlayerZone().getChildren().add(boardCardView);
-        } else {
-            battlefieldPanel.getOpponentZone().getChildren().add(boardCardView);
-        }
+        battlefieldPanel.addCard(boardCardView, permanent.getController() == localPlayer);
     }
 
     // Бій
@@ -307,8 +303,7 @@ public class GameController {
             CardView view = entry.getValue();
 
             if (!alive.contains(p)) {
-                battlefieldPanel.getPlayerZone().getChildren().remove(view);
-                battlefieldPanel.getOpponentZone().getChildren().remove(view);
+                battlefieldPanel.removeCard(view);
                 if (p.getController() == localPlayer) {
                     playerGraveyard.addCardToTop(view);
                 } else {
