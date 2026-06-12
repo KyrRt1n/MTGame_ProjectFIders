@@ -75,6 +75,7 @@ public class PhaseManager {
     private void onEnd() {
         for (Permanent p : state.getBattlefield()) {
             p.clearDamage();
+            p.clearEndOfTurnEffects();
         }
     }
 
