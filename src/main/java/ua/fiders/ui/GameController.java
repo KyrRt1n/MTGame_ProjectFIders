@@ -139,7 +139,13 @@ public class GameController {
             case "PLAY_CARD" -> {
                 int handIndex = Integer.parseInt(parts[1]);
                 Card card = gameEngine.getCurrentPlayer().getHand().get(handIndex);
-                gameEngine.playCard(card);
+                if (gameEngine.playCard(card)) {
+                    if (card.getType() == Type.Sorcery) {
+                        CardView spellView = new CardView(card);
+                        spellView.setOnBoardMode();
+                        opponentGraveyard.addCardToTop(spellView);
+                    }
+                }
             }
             case "NEXT_PHASE" -> {
                 gameEngine.nextPhase();
@@ -227,6 +233,8 @@ public class GameController {
             public void onHandUpdated(Player player) {
                 if (player == localPlayer) {
                     playerHandPanel.updateHand(player.getHand());
+                } else {
+                    opponentHandPanel.updateHandSize(player.getHand().size());
                 }
             }
 
