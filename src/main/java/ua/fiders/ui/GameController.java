@@ -175,8 +175,10 @@ public class GameController {
             case "SEED" -> { }
 
             case "CHAT" -> {
-                String chatMsg = message.substring(5);
-                battleLogPanel.addLogMessage("Суперник: " + chatMsg);
+                String chatMsg = message.startsWith("CHAT ") ? message.substring(5) : "";
+                if (!chatMsg.isBlank()) {
+                    battleLogPanel.addLogMessage("Суперник: " + chatMsg);
+                }
             }
             default -> System.out.println("Невідоме повідомлення: " + message);
         }
