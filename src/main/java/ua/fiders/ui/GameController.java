@@ -241,8 +241,11 @@ public class GameController {
         gameEngine.setListener(new GameListener() {
             @Override
             public void onManaChanged(Player player) {
-                if (player == localPlayer)
+                if (player == localPlayer) {
                     playerInfoPanel.updateMana(player.getCurrentMana());
+                } else if (player == remotePlayer) {
+                    opponentInfoPanel.updateMana(player.getCurrentMana());
+                }
             }
 
             @Override
