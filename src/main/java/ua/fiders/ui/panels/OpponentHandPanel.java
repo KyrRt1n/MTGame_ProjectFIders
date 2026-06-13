@@ -34,7 +34,7 @@ public class OpponentHandPanel extends HBox {
                 "-fx-border-radius: 8; " +
                 "-fx-background-radius: 8;");
 
-        Label logo = new Label("ENENY\nCARD");
+        Label logo = new Label("ENEMY\nCARD");
         logo.setTextFill(Color.web("#7f8c8d"));
         logo.setFont(Font.font("Arial", FontWeight.BOLD, 16));
         logo.setAlignment(Pos.CENTER);
