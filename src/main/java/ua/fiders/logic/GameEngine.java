@@ -157,7 +157,9 @@ public class GameEngine {
 
     private void addPermanent(Card card, Player controller) {
         Permanent permanent = new Permanent(card, controller);
-        summoningSick.add(permanent);
+        permanent.untap();
+        if(!permanent.hasEffectiveKeyword(CardKeywords.HASTE, state))
+            summoningSick.add(permanent);
         state.getBattlefield().add(permanent);
         if (listener != null) {
             listener.onPermanentEnteredBattlefield(permanent);
