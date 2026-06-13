@@ -6,7 +6,7 @@ import ua.fiders.model.Player;
 import ua.fiders.model.cards.Card;
 import ua.fiders.model.cards.CreatureCard;
 import ua.fiders.model.cards.SpellCard;
-import ua.fiders.model.effects.CardEffect;
+import ua.fiders.model.effects.*;
 import ua.fiders.model.enums.CardKeywords;
 import ua.fiders.model.enums.Phase;
 
@@ -79,6 +79,28 @@ public class GameEngine {
             case Land     -> playLand(active, card);
             case Creature -> playCreature(active, card);
             case Sorcery  -> playSorcery(active, card, target1, target2);
+        };
+    }
+
+    public int requiredTargets(Card card) {
+        if (!(card instanceof SpellCard spell)) {
+            return 0;
+        }
+        int needed = 0;
+        for (CardEffect effect : spell.getEffects()) {
+            needed = Math.max(needed, targetsForEffect(effect));
+        }
+        return needed;
+    }
+
+    private int targetsForEffect(CardEffect effect) {
+        return switch (effect) {
+            case BiteEffect ignored          -> 2;
+            case BuffStatsEffect ignored     -> 1;
+            case DestroyTargetEffect ignored -> 1;
+            case DamageEnemyEffect ignored   -> 0;
+            case DrawCardEffect ignored      -> 0;
+            case HealPlayerEffect ignored    -> 0;
         };
     }
 
