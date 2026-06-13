@@ -35,12 +35,20 @@ public class PhaseManager {
 
     private void runCurrentPhase() {
         switch (currentPhase) {
-            case START       -> onStart();
+            case START -> {
+                onStart();
+                enterMain();
+            }
             case MAIN        -> onMain();
             case COMBAT      -> onCombat();
             case SECOND_MAIN -> onSecondMain();
             case END         -> onEnd();
         }
+    }
+
+    private void enterMain() {
+        currentPhase = Phase.MAIN;
+        onMain();
     }
 
     private void onStart() {

@@ -12,6 +12,7 @@ import ua.fiders.model.enums.Phase;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -30,6 +31,7 @@ public class GameEngine {
 
     private final Set<Permanent> declaredAttackers = new LinkedHashSet<>();
     private final Map<Permanent, Permanent> declaredBlocks = new LinkedHashMap<>();
+    private final Set<Permanent> summoningSick = new HashSet<>();
 
     private final EffectExecutor effectExecutor;
 
@@ -44,6 +46,7 @@ public class GameEngine {
 
     public void start() {
         phaseManager.startGame();
+        clearSummoningSicknessFor(state.getCurrentPlayer());
         notifyTurnChanged();
     }
 
@@ -56,6 +59,7 @@ public class GameEngine {
         phaseManager.advance();
         if (state.getCurrentPlayer() != before) {
             landPlayedThisTurn = false;
+            clearSummoningSicknessFor(state.getCurrentPlayer());
             notifyTurnChanged();
         }
         notifyManaChanged(state.getCurrentPlayer());
@@ -130,10 +134,16 @@ public class GameEngine {
 
     private void addPermanent(Card card, Player controller) {
         Permanent permanent = new Permanent(card, controller);
+        permanent.untap();
+        summoningSick.add(permanent);
         state.getBattlefield().add(permanent);
         if (listener != null) {
             listener.onPermanentEnteredBattlefield(permanent);
         }
+    }
+
+    private void clearSummoningSicknessFor(Player player) {
+        summoningSick.removeIf(p -> p.getController() == player);
     }
 
     public boolean canDeclareAttacker(Permanent permanent) {
@@ -142,6 +152,7 @@ public class GameEngine {
                 && permanent.getBaseCard() instanceof CreatureCard
                 && permanent.getController() == state.getCurrentPlayer()
                 && !permanent.isTapped()
+                && !summoningSick.contains(permanent)
                 && state.getBattlefield().contains(permanent)
                 && !permanent.hasEffectiveKeyword(CardKeywords.DEFENDER, state);
     }
@@ -274,9 +285,6 @@ public class GameEngine {
         }
     }
 
-    /**
-     * Відправляє системні повідомлення в UI
-     */
     public void logMessage(String msg) {
         System.out.println(msg);
         if (listener != null) {
