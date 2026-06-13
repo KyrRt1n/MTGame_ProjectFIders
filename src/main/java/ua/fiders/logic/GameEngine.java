@@ -101,6 +101,7 @@ public class GameEngine {
             case DamageEnemyEffect ignored   -> 0;
             case DrawCardEffect ignored      -> 0;
             case HealPlayerEffect ignored    -> 0;
+            default -> throw new IllegalArgumentException("Unknown effect: " + effect);
         };
     }
 
