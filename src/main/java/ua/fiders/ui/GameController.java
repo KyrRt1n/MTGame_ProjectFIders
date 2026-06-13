@@ -91,10 +91,11 @@ public class GameController {
         remotePlayer = isHost ? guestPlayer : hostPlayer;
 
         DeckLoader deckLoader = new DeckLoader();
-        String deckPath = "/decks/Green.json";
+        String greenDeckPath = "/decks/Green.json";
+        String redDeckPath  = "/decks/Red.json";
 
-        List<Card> hostDeck  = deckLoader.loadDeck(deckPath);
-        List<Card> guestDeck = deckLoader.loadDeck(deckPath);
+        List<Card> hostDeck  = deckLoader.loadDeck(greenDeckPath);
+        List<Card> guestDeck = deckLoader.loadDeck(redDeckPath);
 
         Random rng = new Random(seed);
         Collections.shuffle(hostDeck, rng);

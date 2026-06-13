@@ -1,0 +1,19 @@
+[
+  { "type": "Land", "name": "Mountain", "count": 13, "keywords": [], "description": "Базова земля. Дає червону ману.", "imgPath": "/img/Red/mountain.jpg" },
+
+  { "type": "Creature", "name": "Goblin Motivator", "count": 1, "manaCost": 1, "attack": 1, "hp": 1, "keywords": ["HASTE"], "description": "Прискорення", "imgPath": "/img/Red/goblin_motivator.jpg" },
+  { "type": "Creature", "name": "Kargan Dragonrider", "count": 2, "manaCost": 2, "attack": 2, "hp": 2, "keywords": ["FLYING"], "description": "Політ", "imgPath": "/img/Red/kargan_dragonrider.jpg" },
+  { "type": "Creature", "name": "Hostile Minotaur", "count": 2, "manaCost": 4, "attack": 3, "hp": 3, "keywords": ["HASTE"], "description": "Прискорення", "imgPath": "/img/Red/hostile_minotaur.jpg" },
+  { "type": "Creature", "name": "Onakke Ogre", "count": 2, "manaCost": 3, "attack": 4, "hp": 2, "keywords": [], "imgPath": "/img/Red/onakke_ogre.jpg" },
+  { "type": "Creature", "name": "Fire Elemental", "count": 1, "manaCost": 5, "attack": 5, "hp": 4, "keywords": [], "imgPath": "/img/Red/fire_elemental.jpg" },
+  { "type": "Creature", "name": "Sparktongue Dragon", "count": 1, "manaCost": 5, "attack": 3, "hp": 3, "keywords": ["FLYING"], "description": "Політ", "imgPath": "/img/Red/sparktongue_dragon.jpg" },
+  { "type": "Creature", "name": "Volcanic Dragon", "count": 1, "manaCost": 6, "attack": 4, "hp": 4, "keywords": ["FLYING", "HASTE"], "description": "Політ, Прискорення", "imgPath": "/img/Red/volcanic_dragon.jpg" },
+  { "type": "Creature", "name": "Shivan Dragon", "count": 1, "manaCost": 6, "attack": 5, "hp": 5, "keywords": ["FLYING", "TRAMPLE"], "description": "Політ, Пробивний удар", "imgPath": "/img/Red/shivan_dragon.jpg" },
+
+  { "type": "Sorcery", "name": "Shock", "count": 1, "manaCost": 1, "effects": [{ "type": "DAMAGE_TARGET", "amount": 2 }], "description": "Завдає 2 урону цільовій істоті", "imgPath": "/img/Red/shock.jpg" },
+  { "type": "Sorcery", "name": "Lightning Strike", "count": 1, "manaCost": 2, "effects": [{ "type": "DAMAGE_TARGET", "amount": 3 }], "description": "Завдає 3 урону цільовій істоті", "imgPath": "/img/Red/lightning_strike.jpg" },
+  { "type": "Sorcery", "name": "Radiating Lightning", "count": 1, "manaCost": 4, "effects": [{ "type": "DAMAGE_ENEMY", "amount": 3 }], "description": "Завдає 3 урону ворожому гравцю", "imgPath": "/img/Red/radiating_lightning.jpg" },
+  { "type": "Sorcery", "name": "Electrify", "count": 1, "manaCost": 4, "effects": [{ "type": "DAMAGE_TARGET", "amount": 4 }], "description": "Завдає 4 урону цільовій істоті", "imgPath": "/img/Red/electrify.jpg" },
+  { "type": "Sorcery", "name": "Fiery Finish", "count": 1, "manaCost": 6, "effects": [{ "type": "DAMAGE_TARGET", "amount": 7 }], "description": "Завдає 7 урону цільовій істоті", "imgPath": "/img/Red/fiery_finish.jpg" },
+  { "type": "Sorcery", "name": "Trumpet Blast", "count": 1, "manaCost": 3, "effects": [{ "type": "BUFF_STATS", "attackAmount": 2, "hpAmount": 0, "isPermanent": false }], "description": "Надає цільовій істоті +2/+0 до кінця ходу", "imgPath": "/img/Red/trumpet_blast.jpg" }
+]
