@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static ua.fiders.model.enums.CardKeywords.DEFENDER;
+
 public class GameEngine {
 
     private final GameState state;
@@ -141,7 +143,8 @@ public class GameEngine {
                 && permanent.getBaseCard() instanceof CreatureCard
                 && permanent.getController() == state.getCurrentPlayer()
                 && !permanent.isTapped()
-                && state.getBattlefield().contains(permanent);
+                && state.getBattlefield().contains(permanent)
+                && !permanent.hasKeyword(DEFENDER);
     }
 
     public boolean toggleAttacker(Permanent permanent) {

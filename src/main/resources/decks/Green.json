@@ -12,7 +12,7 @@
   { "type": "Creature", "name": "Ghastbark Twins", "count": 1, "manaCost": 7, "attack": 7, "hp": 7, "keywords": ["TRAMPLE"], "imgPath": "/img/ghastbark_twins.jpg" },
   { "type": "Creature", "name": "Aggressive Mammoth", "count": 1, "manaCost": 7, "attack": 8, "hp": 8, "keywords": ["TRAMPLE"], "imgPath": "/img/aggressive_mammoth.jpg" },
   { "type": "Sorcery", "name": "Rabid Bite", "count": 1, "manaCost": 2, "imgPath": "/img/rabid_bite.jpg", "effects": [{ "type": "BITE_EFFECT" }] },
-  { "type": "Sorcery", "name": "Plummet", "count": 1, "manaCost": 2, "imgPath": "/img/plummet.jpg", "effects": [{ "type": "DESTROY_FLYING" }] },
+  { "type": "Sorcery", "name": "Plummet", "count": 1, "manaCost": 2, "imgPath": "/img/plummet.jpg", "effects": [{ "type": "DESTROY_TARGET", "requiredKeyword": "FLYING" }] },
   { "type": "Sorcery", "name": "Titanic Growth", "count": 2, "manaCost": 2, "imgPath": "/img/titanic_growth.jpg", "effects": [{ "type": "BUFF_STATS", "attackAmount": 4, "hpAmount": 4, "isPermanent": false }] },
   { "type": "Sorcery", "name": "Oakenform", "count": 1, "manaCost": 3, "imgPath": "/img/oakenform.jpg", "effects": [{ "type": "BUFF_STATS", "attackAmount": 3, "hpAmount": 3, "isPermanent": true }] }
 ]
