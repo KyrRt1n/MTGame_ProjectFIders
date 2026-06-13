@@ -21,6 +21,13 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.input.MouseButton;
+import javafx.scene.layout.StackPane;
+import javafx.geometry.Bounds;
+import javafx.animation.TranslateTransition;
+import javafx.animation.RotateTransition;
+import javafx.animation.ScaleTransition;
+import javafx.animation.ParallelTransition;
+import javafx.animation.PauseTransition;
 
 import ua.fiders.data.DeckLoader;
 
@@ -31,13 +38,14 @@ import java.util.Map;
 import java.util.Random;
 
 public class GameController {
+
+    private final StackPane glassPane;
     private final BorderPane rootLayout;
 
     private OpponentHandPanel opponentHandPanel;
     private GraveyardPanel playerGraveyard;
     private GraveyardPanel opponentGraveyard;
 
-    // UI Панелі
     private PlayerInfoPanel playerInfoPanel;
     private OpponentInfoPanel opponentInfoPanel;
     private HandPanel playerHandPanel;
@@ -65,6 +73,12 @@ public class GameController {
     private Timeline turnTimer;
     private int timeLeft = 120;
 
+    private Card pendingSpell = null;
+    private int targetsNeeded = 0;
+    private Permanent target1 = null;
+    private Permanent target2 = null;
+    private CardView pendingSpellView = null;
+
     public GameController(NetworkSession session, boolean isHost, long seed) {
         this.session = session;
         this.isHost = isHost;
@@ -72,6 +86,10 @@ public class GameController {
 
         rootLayout = new BorderPane();
         rootLayout.setStyle("-fx-background-color: radial-gradient(center 50% 50%, radius 100%, #301515 0%, #050505 85%);");
+
+        glassPane = new StackPane();
+        glassPane.getChildren().add(rootLayout);
+        glassPane.setPickOnBounds(false);
 
         initGame();
         setupUI();
@@ -143,6 +161,23 @@ public class GameController {
 
                 if (gameEngine.playCard(card)) {
                     opponentHandPanel.updateHandSize(gameEngine.getCurrentPlayer().getHand().size());
+                    if (card.getType() == Type.Sorcery) showSpellAnimation(card, false);
+                    syncBattlefield();
+                }
+            }
+            case "PLAY_SPELL_TARGET" -> {
+                int handIndex = Integer.parseInt(parts[1]);
+                int t1Index = Integer.parseInt(parts[2]);
+                int t2Index = Integer.parseInt(parts[3]);
+
+                Card card = gameEngine.getCurrentPlayer().getHand().get(handIndex);
+                Permanent t1 = battlefieldAt(t1Index);
+                Permanent t2 = battlefieldAt(t2Index);
+
+                if (gameEngine.playCard(card, t1, t2)) {
+                    opponentHandPanel.updateHandSize(gameEngine.getCurrentPlayer().getHand().size());
+                    showSpellAnimation(card, false);
+                    syncBattlefield();
                 }
             }
             case "NEXT_PHASE" -> {
@@ -160,8 +195,7 @@ public class GameController {
             case "BLOCK" -> {
                 Permanent attacker = battlefieldAt(Integer.parseInt(parts[1]));
                 Permanent blocker  = battlefieldAt(Integer.parseInt(parts[2]));
-                if (attacker != null && blocker != null
-                        && gameEngine.assignBlocker(attacker, blocker)) {
+                if (attacker != null && blocker != null && gameEngine.assignBlocker(attacker, blocker)) {
                     CardView view = boardViews.get(blocker);
                     if (view != null) view.setHighlight(true);
                 }
@@ -186,14 +220,14 @@ public class GameController {
     }
 
     private Permanent battlefieldAt(int index) {
+        if (index == -1) return null;
         List<Permanent> battlefield = gameEngine.getState().getBattlefield();
-        if (index < 0 || index >= battlefield.size()) {
-            return null;
-        }
+        if (index < 0 || index >= battlefield.size()) return null;
         return battlefield.get(index);
     }
 
     private int battlefieldIndexOf(Permanent permanent) {
+        if (permanent == null) return -1;
         return gameEngine.getState().getBattlefield().indexOf(permanent);
     }
 
@@ -264,23 +298,72 @@ public class GameController {
         boardCardView.setOnMouseClicked(mouseEvent -> {
             if (mouseEvent.getButton() == MouseButton.PRIMARY) {
                 handleBoardCardClick(permanent, boardCardView);
+            } else if (mouseEvent.getButton() == MouseButton.SECONDARY) {
+                cancelTargeting(); // Правий клік скасовує прицілювання
             }
         });
 
         battlefieldPanel.addCard(boardCardView, permanent.getController() == localPlayer);
     }
 
-    // Бій
+    // бій та прицілювання
 
     private void handleBoardCardClick(Permanent permanent, CardView view) {
-        if (gameEngine.getCurrentPhase() != Phase.COMBAT) {
+
+        // режим прицілювання заклинання
+        if (pendingSpell != null) {
+            handleTargetSelection(permanent, view);
             return;
         }
 
+        // фаза бою
+        if (gameEngine.getCurrentPhase() == Phase.COMBAT) {
+            handleCombatClick(permanent, view);
+        }
+    }
+
+    private void handleTargetSelection(Permanent permanent, CardView view) {
+        if (target1 == null) {
+            target1 = permanent;
+            view.setStyle("-fx-border-color: #3498db; -fx-border-width: 4; -fx-border-radius: 12;"); // Підсвітка цілі
+            if (targetsNeeded == 1) applyPendingSpell();
+            else battleLogPanel.addLogMessage("Оберіть ціль №2...");
+        } else if (target2 == null && permanent != target1) {
+            target2 = permanent;
+            view.setStyle("-fx-border-color: #3498db; -fx-border-width: 4; -fx-border-radius: 12;");
+            if (targetsNeeded == 2) applyPendingSpell();
+        }
+    }
+
+    private void applyPendingSpell() {
+        int handIndex = localPlayer.getHand().indexOf(pendingSpell);
+
+        if (gameEngine.playCard(pendingSpell, target1, target2)) {
+            session.send("PLAY_SPELL_TARGET " + handIndex + " " + battlefieldIndexOf(target1) + " " + battlefieldIndexOf(target2));
+            playerHandPanel.getChildren().remove(pendingSpellView);
+            showSpellAnimation(pendingSpell, true);
+        } else {
+            battleLogPanel.addLogMessage("Не вдалося зіграти заклинання.");
+        }
+        cancelTargeting();
+    }
+
+    private void cancelTargeting() {
+        if (pendingSpell != null) {
+            battleLogPanel.addLogMessage("Прицілювання скасовано.");
+            if (pendingSpellView != null) pendingSpellView.setOpacity(1.0);
+        }
+        pendingSpell = null;
+        target1 = null;
+        target2 = null;
+        targetsNeeded = 0;
+        pendingSpellView = null;
+        syncBattlefield();
+    }
+
+    private void handleCombatClick(Permanent permanent, CardView view) {
         if (isMyTurn() && !attackConfirmed) {
-            if (permanent.getController() != localPlayer) {
-                return;
-            }
+            if (permanent.getController() != localPlayer) return;
             boolean nowAttacking = gameEngine.toggleAttacker(permanent);
             view.setHighlight(nowAttacking);
             session.send("ATTACKER " + battlefieldIndexOf(permanent));
@@ -289,18 +372,16 @@ public class GameController {
 
         if (!isMyTurn() && attackConfirmed) {
             if (permanent.getController() != localPlayer) {
-                selectedAttacker = gameEngine.getDeclaredAttackers().contains(permanent)
-                        ? permanent : null;
+                selectedAttacker = gameEngine.getDeclaredAttackers().contains(permanent) ? permanent : null;
                 return;
             }
             if (selectedAttacker == null) {
-                System.out.println("Спочатку клікни ворожого атакуючого");
+                battleLogPanel.addLogMessage("Спочатку клікни ворожого атакуючого!");
                 return;
             }
             if (gameEngine.assignBlocker(selectedAttacker, permanent)) {
                 view.setHighlight(true);
-                session.send("BLOCK " + battlefieldIndexOf(selectedAttacker)
-                        + " " + battlefieldIndexOf(permanent));
+                session.send("BLOCK " + battlefieldIndexOf(selectedAttacker) + " " + battlefieldIndexOf(permanent));
             }
         }
     }
@@ -333,17 +414,17 @@ public class GameController {
 
             if (!alive.contains(p)) {
                 battlefieldPanel.removeCard(view);
-                if (p.getController() == localPlayer) {
-                    playerGraveyard.addCardToTop(view);
-                } else {
-                    opponentGraveyard.addCardToTop(view);
-                }
+                if (p.getController() == localPlayer) playerGraveyard.addCardToTop(view);
+                else opponentGraveyard.addCardToTop(view);
                 return true;
             }
 
             if (p.isTapped() && !view.isTapped()) view.tap();
             if (!p.isTapped() && view.isTapped()) view.untap();
             view.setHighlight(false);
+
+            view.updateStats(p.getCurrentAttack(), p.getRemainingHp(), p.getMaxHp());
+
             return false;
         });
     }
@@ -362,7 +443,6 @@ public class GameController {
         opponentGraveyard = new GraveyardPanel("ВІДБІЙ ВОРОГА");
 
         battleLogPanel = new BattleLogPanel();
-        // Підключаємо відправку повідомлень до мережі
         battleLogPanel.setOnMessageSent(text -> {
             battleLogPanel.addLogMessage("Ти: " + text);
             session.send("CHAT " + text);
@@ -393,7 +473,6 @@ public class GameController {
         HBox.setHgrow(battlefieldPanel, Priority.ALWAYS);
         centerLayout.getChildren().addAll(battlefieldPanel, graveyardsBox);
 
-        // Розставляємо на головному екрані
         rootLayout.setTop(opponentHandPanel);
         rootLayout.setCenter(centerLayout);
         rootLayout.setBottom(playerHandPanel);
@@ -410,11 +489,16 @@ public class GameController {
         setupDragAndDrop();
     }
 
-    public BorderPane getRootLayout() { return rootLayout; }
+    public StackPane getRootLayout() { return glassPane; }
 
-    // Логіка приймання карти на ігрове поле (Drop Target)
+    // Логіка приймання карти на ігрове поле + ТАРГЕТИНГ
     private void setupDragAndDrop() {
         HBox playerZone = battlefieldPanel.getPlayerZone();
+
+        // Додаємо можливість відмінити драг енд дроп через правий клік по столу
+        playerZone.setOnMouseClicked(e -> {
+            if (e.getButton() == MouseButton.SECONDARY) cancelTargeting();
+        });
 
         playerZone.setOnDragOver(event -> {
             if (event.getGestureSource() instanceof CardView) {
@@ -429,35 +513,86 @@ public class GameController {
             if (event.getGestureSource() instanceof CardView dragCardView) {
                 Card playedCard = dragCardView.getCard();
 
-                if (isMyTurn()) {
-                    int handIndex = localPlayer.getHand().indexOf(playedCard);
+                if (isMyTurn() && localPlayer.getCurrentMana() >= playedCard.getManaCost()) {
 
-                    if (handIndex >= 0 && gameEngine.playCard(playedCard)) {
-                        session.send("PLAY_CARD " + handIndex);
-                        playerHandPanel.getChildren().remove(dragCardView);
+                    int needed = gameEngine.requiredTargets(playedCard);
 
-                        if (playedCard.getType() == Type.Sorcery) {
-                            dragCardView.setOnBoardMode();
-                            playerGraveyard.addCardToTop(dragCardView);
+                    // Якщо заклинання потребує цілі
+                    if (needed > 0) {
+                        pendingSpell = playedCard;
+                        targetsNeeded = needed;
+                        pendingSpellView = dragCardView;
+
+                        // Повертаємо карту візуально в руку, поки не виберемо ціль
+                        dragCardView.setOpacity(0.5);
+                        battleLogPanel.addLogMessage("Оберіть " + needed + " ціль(і) для " + playedCard.getName());
+                        success = false;
+                    } else {
+                        // Звичайна карта без цілей
+                        int handIndex = localPlayer.getHand().indexOf(playedCard);
+                        if (handIndex >= 0 && gameEngine.playCard(playedCard)) {
+                            session.send("PLAY_CARD " + handIndex);
+                            playerHandPanel.getChildren().remove(dragCardView);
+
+                            if (playedCard.getType() == Type.Sorcery) {
+                                showSpellAnimation(playedCard, true);
+                            }
+                            success = true;
                         }
-
-                        success = true;
                     }
+                } else {
+                    battleLogPanel.addLogMessage("Недостатньо мани!");
                 }
             }
-
             event.setDropCompleted(success);
             event.consume();
         });
     }
 
-    /**
-     * Логіка перемикання ігрових фаз
-     */
+    // анімація заклять
+    private void showSpellAnimation(Card card, boolean isLocal) {
+        CardView spellView = new CardView(card);
+        spellView.setOnBoardMode();
+
+        spellView.setScaleX(1.5);
+        spellView.setScaleY(1.5);
+
+        glassPane.getChildren().add(spellView);
+
+        PauseTransition pause = new PauseTransition(Duration.seconds(1.5));
+        pause.setOnFinished(e -> {
+            GraveyardPanel targetGraveyard = isLocal ? playerGraveyard : opponentGraveyard;
+
+            Bounds cardBounds = spellView.localToScene(spellView.getBoundsInLocal());
+            Bounds gyBounds = targetGraveyard.localToScene(targetGraveyard.getBoundsInLocal());
+
+            double moveX = gyBounds.getCenterX() - cardBounds.getCenterX();
+            double moveY = gyBounds.getCenterY() - cardBounds.getCenterY();
+
+            TranslateTransition tt = new TranslateTransition(Duration.millis(500), spellView);
+            tt.setByX(moveX);
+            tt.setByY(moveY);
+
+            ScaleTransition st = new ScaleTransition(Duration.millis(500), spellView);
+            st.setToX(1.0);
+            st.setToY(1.0);
+
+            RotateTransition rt = new RotateTransition(Duration.millis(500), spellView);
+            rt.setByAngle(360);
+
+            ParallelTransition pt = new ParallelTransition(tt, st, rt);
+            pt.setOnFinished(ev -> {
+                glassPane.getChildren().remove(spellView);
+                targetGraveyard.addCardToTop(spellView);
+            });
+            pt.play();
+        });
+        pause.play();
+    }
+
     private void advancePhase() {
-        if (!isMyTurn()) {
-            return;
-        }
+        if (!isMyTurn()) return;
+        cancelTargeting();
         gameEngine.nextPhase();
         session.send("NEXT_PHASE");
         onPhaseChangedLocally();
@@ -466,6 +601,7 @@ public class GameController {
     private void onPhaseChangedLocally() {
         attackConfirmed = false;
         selectedAttacker = null;
+        cancelTargeting();
         syncBattlefield();
         updateControls();
 
@@ -474,14 +610,11 @@ public class GameController {
 
         timeLeft = 120;
         controlPanel.updateTimerText(timeLeft);
-        if (turnTimer != null) {
-            turnTimer.playFromStart();
-        }
+        if (turnTimer != null) turnTimer.playFromStart();
     }
 
     private void updateControls() {
         boolean combat = gameEngine.getCurrentPhase() == Phase.COMBAT;
-
         confirmAttackBtn.setDisable(!(combat && isMyTurn() && !attackConfirmed));
         fightBtn.setDisable(!(combat && !isMyTurn() && attackConfirmed));
     }
@@ -496,7 +629,6 @@ public class GameController {
         };
     }
 
-    // Для мультиплеєра знадобиться
     private void setInteractionEnabled(boolean enabled) {
         controlPanel.setDisable(!enabled);
         playerHandPanel.setDisable(!enabled);
@@ -510,7 +642,7 @@ public class GameController {
 
             if (timeLeft <= 0) {
                 if (isMyTurn()) {
-                    System.out.println("Час вийшов! Автоматичний пропуск фази.");
+                    battleLogPanel.addLogMessage("Час вийшов! Автоматичний пропуск фази.");
                     advancePhase();
                 } else {
                     timeLeft = 0;
