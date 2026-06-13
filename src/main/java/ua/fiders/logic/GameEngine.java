@@ -6,7 +6,7 @@ import ua.fiders.model.Player;
 import ua.fiders.model.cards.Card;
 import ua.fiders.model.cards.CreatureCard;
 import ua.fiders.model.cards.SpellCard;
-import ua.fiders.model.effects.CardEffect;
+import ua.fiders.model.effects.*;
 import ua.fiders.model.enums.CardKeywords;
 import ua.fiders.model.enums.Phase;
 
@@ -30,7 +30,7 @@ public class GameEngine {
     private boolean gameOver;
 
     private final Set<Permanent> declaredAttackers = new LinkedHashSet<>();
-    private final Map<Permanent, Permanent> declaredBlocks = new LinkedHashMap<>();
+    private final Map<Permanent, List<Permanent>> declaredBlocks = new LinkedHashMap<>();
     private final Set<Permanent> summoningSick = new HashSet<>();
 
     private final EffectExecutor effectExecutor;
@@ -79,6 +79,28 @@ public class GameEngine {
             case Land     -> playLand(active, card);
             case Creature -> playCreature(active, card);
             case Sorcery  -> playSorcery(active, card, target1, target2);
+        };
+    }
+
+    public int requiredTargets(Card card) {
+        if (!(card instanceof SpellCard spell)) {
+            return 0;
+        }
+        int needed = 0;
+        for (CardEffect effect : spell.getEffects()) {
+            needed = Math.max(needed, targetsForEffect(effect));
+        }
+        return needed;
+    }
+
+    private int targetsForEffect(CardEffect effect) {
+        return switch (effect) {
+            case BiteEffect ignored          -> 2;
+            case BuffStatsEffect ignored     -> 1;
+            case DestroyTargetEffect ignored -> 1;
+            case DamageEnemyEffect ignored   -> 0;
+            case DrawCardEffect ignored      -> 0;
+            case HealPlayerEffect ignored    -> 0;
         };
     }
 
@@ -175,16 +197,25 @@ public class GameEngine {
                 && blocker.getBaseCard() instanceof CreatureCard
                 && blocker.getController() != state.getCurrentPlayer()
                 && !blocker.isTapped()
-                && !declaredBlocks.containsValue(blocker)
+                && !isAlreadyBlocking(blocker)
                 && state.getBattlefield().contains(blocker)
                 && combatResolver.canBlock(blocker, attacker, state);
+    }
+
+    private boolean isAlreadyBlocking(Permanent blocker) {
+        for (List<Permanent> blockers : declaredBlocks.values()) {
+            if (blockers.contains(blocker)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public boolean assignBlocker(Permanent attacker, Permanent blocker) {
         if (!canDeclareBlocker(attacker, blocker)) {
             return false;
         }
-        declaredBlocks.put(attacker, blocker);
+        declaredBlocks.computeIfAbsent(attacker, k -> new ArrayList<>()).add(blocker);
         return true;
     }
 
@@ -196,7 +227,7 @@ public class GameEngine {
         return Collections.unmodifiableSet(declaredAttackers);
     }
 
-    public Map<Permanent, Permanent> getDeclaredBlocks() {
+    public Map<Permanent, List<Permanent>> getDeclaredBlocks() {
         return Collections.unmodifiableMap(declaredBlocks);
     }
 
@@ -216,11 +247,11 @@ public class GameEngine {
         declaredBlocks.clear();
     }
 
-    public void resolveCombat(List<Permanent> attackers, Map<Permanent, Permanent> blocks) {
+    public void resolveCombat(List<Permanent> attackers, Map<Permanent, List<Permanent>> blocks) {
         if (gameOver) {
             return;
         }
-        combatResolver.resolveCombat(attackers, blocks, state);
+        combatResolver.resolveCombatMulti(attackers, blocks, state);
         notifyHpChanged(state.getPlayer1());
         notifyHpChanged(state.getPlayer2());
         checkGameOver();

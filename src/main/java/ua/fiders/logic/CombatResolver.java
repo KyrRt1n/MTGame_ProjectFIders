@@ -6,6 +6,8 @@ import ua.fiders.model.Player;
 import ua.fiders.model.cards.CreatureCard;
 import ua.fiders.model.enums.CardKeywords;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -14,6 +16,18 @@ public class CombatResolver {
     public void resolveCombat(List<Permanent> attackers,
                               Map<Permanent, Permanent> blocks,
                               GameState state) {
+        Map<Permanent, List<Permanent>> multi = new LinkedHashMap<>();
+        for (Map.Entry<Permanent, Permanent> entry : blocks.entrySet()) {
+            List<Permanent> single = new ArrayList<>();
+            single.add(entry.getValue());
+            multi.put(entry.getKey(), single);
+        }
+        resolveCombatMulti(attackers, multi, state);
+    }
+
+    public void resolveCombatMulti(List<Permanent> attackers,
+                                   Map<Permanent, List<Permanent>> blocks,
+                                   GameState state) {
 
         Player attackingPlayer = state.getCurrentPlayer();
         Player defendingPlayer = (attackingPlayer == state.getPlayer1())
@@ -25,16 +39,18 @@ public class CombatResolver {
                 continue;
             }
 
-            Permanent blocker = blocks.get(attacker);
-
-            if (blocker != null && !canBlock(blocker, attacker, state)) {
-                blocker = null;
+            List<Permanent> assigned = blocks.getOrDefault(attacker, List.of());
+            List<Permanent> legalBlockers = new ArrayList<>();
+            for (Permanent blocker : assigned) {
+                if (canBlock(blocker, attacker, state)) {
+                    legalBlockers.add(blocker);
+                }
             }
 
-            if (blocker == null) {
+            if (legalBlockers.isEmpty()) {
                 resolveUnblocked(attacker, defendingPlayer);
             } else {
-                resolveBlocked(attacker, blocker, defendingPlayer, state);
+                resolveBlocked(attacker, legalBlockers, defendingPlayer, state);
             }
         }
 
@@ -55,23 +71,34 @@ public class CombatResolver {
         applyLifelink(attacker, power);
     }
 
-    private void resolveBlocked(Permanent attacker, Permanent blocker, Player defendingPlayer, GameState state) {
-        int attackerPower = attacker.getCurrentAttack();
-        int blockerPower  = blocker.getCurrentAttack();
+    private void resolveBlocked(Permanent attacker,
+                                List<Permanent> blockers,
+                                Player defendingPlayer,
+                                GameState state) {
+        int totalPower = attacker.getCurrentAttack();
+        int unassigned = totalPower;
 
-        int blockerHpBefore = blocker.getRemainingHp();
-
-        blocker.takeDamage(attackerPower);
-
-        if (attacker.hasEffectiveKeyword(CardKeywords.TRAMPLE, state) && attackerPower > blockerHpBefore) {
-            int excess = attackerPower - blockerHpBefore;
-            dealDamageToPlayer(defendingPlayer, excess);
+        for (Permanent blocker : blockers) {
+            if (unassigned <= 0) break;
+            int lethal = Math.min(unassigned, blocker.getRemainingHp());
+            blocker.takeDamage(lethal);
+            unassigned -= lethal;
         }
 
-        attacker.takeDamage(blockerPower);
+        if (attacker.hasEffectiveKeyword(CardKeywords.TRAMPLE, state) && unassigned > 0) {
+            dealDamageToPlayer(defendingPlayer, unassigned);
+        }
 
-        applyLifelink(attacker, attackerPower);
-        applyLifelink(blocker, blockerPower);
+        int blockerTotalPower = 0;
+        for (Permanent blocker : blockers) {
+            blockerTotalPower += blocker.getCurrentAttack();
+        }
+        attacker.takeDamage(blockerTotalPower);
+
+        applyLifelink(attacker, totalPower);
+        for (Permanent blocker : blockers) {
+            applyLifelink(blocker, blocker.getCurrentAttack());
+        }
     }
 
     private void dealDamageToPlayer(Player player, int amount) {
