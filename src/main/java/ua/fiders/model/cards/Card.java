@@ -13,6 +13,7 @@ public abstract class Card {
     protected Set<CardKeywords> keywords;
     protected Set<CardKeywords> grantedKeywords = new HashSet<>();
     private String imgPath;
+    private String description = "";
 
     public Card(String name, Type type, int manaCost, Set<CardKeywords> keywords, String imgPath) {
         this.name = name;
@@ -56,5 +57,13 @@ public abstract class Card {
 
     public void setGrantedKeywords(Set<CardKeywords> grantedKeywords) {
         this.grantedKeywords = (grantedKeywords != null) ? grantedKeywords : new HashSet<>();
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

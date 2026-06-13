@@ -64,11 +64,15 @@ public class DeckLoader {
         String name = node.get("name").asText();
         String imgPath = node.get("imgPath").asText();
 
+        String description = node.has("description") ? node.get("description").asText() : "";
+
+        Card card = null;
+
         switch (type) {
             case "Land":
                 Set<CardKeywords> landKeywords = parseKeywords(node, "keywords");
-                // LandCard(name, keywords, imgPath)
-                return new LandCard(name, landKeywords, imgPath);
+                card = new LandCard(name, landKeywords, imgPath);
+                break;
 
             case "Creature":
                 int manaCost = node.get("manaCost").asInt();
@@ -77,23 +81,27 @@ public class DeckLoader {
                 Set<CardKeywords> creatureKeywords = parseKeywords(node, "keywords");
                 Set<CardKeywords> grantedKws = parseKeywords(node, "grantedKeywords");
 
-                // CreatureCard(name, manaCost, keywords, imgPath, attack, hp)
-                CreatureCard cc = new CreatureCard(name, manaCost, creatureKeywords, imgPath, attack, hp);
-                cc.setGrantedKeywords(grantedKws);
-                return cc;
+                CreatureCard c = new CreatureCard(name, manaCost, creatureKeywords, imgPath, attack, hp);
+                c.setGrantedKeywords(grantedKws);
+                card = c;
+                break;
 
             case "Sorcery":
                 int spellManaCost = node.get("manaCost").asInt();
                 // Завантажуємо список ефектів для заклинання
                 List<CardEffect> effects = parseEffects(node);
-
-                // Точний порядок з помилки: SpellCard(name, manaCost, imgPath, effects)
-                return new SpellCard(name, spellManaCost, imgPath, effects);
+                card = new SpellCard(name, spellManaCost, imgPath, effects);
+                break;
 
             default:
                 System.err.println("Попередження: Невідомий тип карти в JSON: " + type);
                 return null;
         }
+
+        if (card != null)
+            card.setDescription(description);
+
+        return card;
     }
 
     /**
