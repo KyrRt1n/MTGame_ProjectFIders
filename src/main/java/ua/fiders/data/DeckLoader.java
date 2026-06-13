@@ -146,7 +146,6 @@ public class DeckLoader {
                         yield new DrawCardEffect(amount);
                     }
                     case "BUFF_STATS" -> {
-                        // Чисто берем новые параметры для баффов
                         int attack = effectNode.has("attackAmount") ? effectNode.get("attackAmount").asInt() : 0;
                         int hp = effectNode.has("hpAmount") ? effectNode.get("hpAmount").asInt() : 0;
                         boolean isPermanent = effectNode.has("isPermanent") && effectNode.get("isPermanent").asBoolean();
@@ -165,6 +164,10 @@ public class DeckLoader {
                         yield new DestroyTargetEffect(requiredKeyword);
                     }
                     case "BITE_EFFECT" -> new BiteEffect();
+                    case "DAMAGE_TARGET" -> {
+                        int amount = effectNode.has("amount") ? effectNode.get("amount").asInt() : 0;
+                        yield new DamageTargetEffect(amount);
+                    }
 
                     default -> {
                         System.err.println("Попередження: Невідомий тип ефекту: " + effectType);

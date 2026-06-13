@@ -6,5 +6,6 @@ public sealed interface CardEffect permits
         DamageEnemyEffect,
         BuffStatsEffect,
         DestroyTargetEffect,
-        BiteEffect {
+        BiteEffect,
+        DamageTargetEffect {
 }

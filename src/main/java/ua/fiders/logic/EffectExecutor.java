@@ -59,6 +59,12 @@ public class EffectExecutor {
                     logger.accept(target1.getBaseCard().getName() + " кусає " + target2.getBaseCard().getName() + " на " + damage + " урону!");
                 }
             }
+            case DamageTargetEffect damageTarget -> {
+                if (target1 != null) {
+                    target1.takeDamage(damageTarget.amount());
+                    System.out.println(target1.getBaseCard().getName() + " отримує " + damageTarget.amount() + " урону!");
+                }
+            }
         }
     }
 }
