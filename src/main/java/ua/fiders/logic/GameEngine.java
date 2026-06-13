@@ -7,6 +7,7 @@ import ua.fiders.model.cards.Card;
 import ua.fiders.model.cards.CreatureCard;
 import ua.fiders.model.cards.SpellCard;
 import ua.fiders.model.effects.CardEffect;
+import ua.fiders.model.enums.CardKeywords;
 import ua.fiders.model.enums.Phase;
 
 import java.util.ArrayList;
@@ -16,8 +17,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static ua.fiders.model.enums.CardKeywords.DEFENDER;
 
 public class GameEngine {
 
@@ -144,7 +143,7 @@ public class GameEngine {
                 && permanent.getController() == state.getCurrentPlayer()
                 && !permanent.isTapped()
                 && state.getBattlefield().contains(permanent)
-                && !permanent.hasKeyword(DEFENDER);
+                && !permanent.hasEffectiveKeyword(CardKeywords.DEFENDER, state);
     }
 
     public boolean toggleAttacker(Permanent permanent) {
@@ -168,7 +167,7 @@ public class GameEngine {
                 && !blocker.isTapped()
                 && !declaredBlocks.containsValue(blocker)
                 && state.getBattlefield().contains(blocker)
-                && combatResolver.canBlock(blocker, attacker);
+                && combatResolver.canBlock(blocker, attacker, state);
     }
 
     public boolean assignBlocker(Permanent attacker, Permanent blocker) {

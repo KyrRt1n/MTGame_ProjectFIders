@@ -94,4 +94,16 @@ public class Permanent {
     public void clearDamage() {
         damageTaken = 0;
     }
+
+    public boolean hasEffectiveKeyword(CardKeywords targetKeyword, GameState state) {
+        if (this.getBaseCard().getKeywords().contains(targetKeyword))
+            return true;
+
+        // Перевірка чи не роздає хтось еффекти
+        for (Permanent p : state.getBattlefield())
+            if (p.getController() == this.getController() && p != this && p.getBaseCard().getGrantedKeywords().contains(targetKeyword))
+                return true;
+
+        return false;
+    }
 }

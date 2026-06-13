@@ -66,7 +66,7 @@ public class DeckLoader {
 
         switch (type) {
             case "Land":
-                Set<CardKeywords> landKeywords = parseKeywords(node);
+                Set<CardKeywords> landKeywords = parseKeywords(node, "keywords");
                 // LandCard(name, keywords, imgPath)
                 return new LandCard(name, landKeywords, imgPath);
 
@@ -74,10 +74,13 @@ public class DeckLoader {
                 int manaCost = node.get("manaCost").asInt();
                 int attack = node.get("attack").asInt();
                 int hp = node.get("hp").asInt();
-                Set<CardKeywords> creatureKeywords = parseKeywords(node);
+                Set<CardKeywords> creatureKeywords = parseKeywords(node, "keywords");
+                Set<CardKeywords> grantedKws = parseKeywords(node, "grantedKeywords");
 
                 // CreatureCard(name, manaCost, keywords, imgPath, attack, hp)
-                return new CreatureCard(name, manaCost, creatureKeywords, imgPath, attack, hp);
+                CreatureCard cc = new CreatureCard(name, manaCost, creatureKeywords, imgPath, attack, hp);
+                cc.setGrantedKeywords(grantedKws);
+                return cc;
 
             case "Sorcery":
                 int spellManaCost = node.get("manaCost").asInt();
@@ -96,15 +99,15 @@ public class DeckLoader {
     /**
      * Допоміжний метод для парсингу ключових слів (Enums)
      */
-    private Set<CardKeywords> parseKeywords(JsonNode node) {
+    private Set<CardKeywords> parseKeywords(JsonNode node, String fieldName) {
         Set<CardKeywords> keywordsSet = new HashSet<>();
-        if (node.has("keywords") && node.get("keywords").isArray()) {
-            for (JsonNode keywordNode : node.get("keywords")) {
+        if (node.has(fieldName) && node.get(fieldName).isArray()) {
+            for (JsonNode keywordNode : node.get(fieldName)) {
                 try {
                     String kwStr = keywordNode.asText().toUpperCase();
                     keywordsSet.add(CardKeywords.valueOf(kwStr));
                 } catch (IllegalArgumentException e) {
-                    System.err.println("Попередження: Ківорд '" + keywordNode.asText() + "' не знайдено в CardKeywords");
+                    System.err.println("Попередження: Ківорд '" + keywordNode.asText() + "' не знайдено!");
                 }
             }
         }

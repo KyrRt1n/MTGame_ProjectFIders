@@ -27,26 +27,26 @@ public class CombatResolver {
 
             Permanent blocker = blocks.get(attacker);
 
-            if (blocker != null && !canBlock(blocker, attacker)) {
+            if (blocker != null && !canBlock(blocker, attacker, state)) {
                 blocker = null;
             }
 
             if (blocker == null) {
                 resolveUnblocked(attacker, defendingPlayer);
             } else {
-                resolveBlocked(attacker, blocker, defendingPlayer);
+                resolveBlocked(attacker, blocker, defendingPlayer, state);
             }
         }
 
         removeDeadCreatures(state);
     }
 
-    public boolean canBlock(Permanent blocker, Permanent attacker) {
-        if (!attacker.hasKeyword(CardKeywords.FLYING)) {
+    public boolean canBlock(Permanent blocker, Permanent attacker, GameState state) {
+        if (!attacker.hasEffectiveKeyword(CardKeywords.FLYING, state))
             return true;
-        }
-        return blocker.hasKeyword(CardKeywords.FLYING)
-                || blocker.hasKeyword(CardKeywords.REACH);
+
+        return blocker.hasEffectiveKeyword(CardKeywords.FLYING, state)
+                || blocker.hasEffectiveKeyword(CardKeywords.REACH, state);
     }
 
     private void resolveUnblocked(Permanent attacker, Player defendingPlayer) {
@@ -55,7 +55,7 @@ public class CombatResolver {
         applyLifelink(attacker, power);
     }
 
-    private void resolveBlocked(Permanent attacker, Permanent blocker, Player defendingPlayer) {
+    private void resolveBlocked(Permanent attacker, Permanent blocker, Player defendingPlayer, GameState state) {
         int attackerPower = attacker.getCurrentAttack();
         int blockerPower  = blocker.getCurrentAttack();
 
@@ -63,7 +63,7 @@ public class CombatResolver {
 
         blocker.takeDamage(attackerPower);
 
-        if (attacker.hasKeyword(CardKeywords.TRAMPLE) && attackerPower > blockerHpBefore) {
+        if (attacker.hasEffectiveKeyword(CardKeywords.TRAMPLE, state) && attackerPower > blockerHpBefore) {
             int excess = attackerPower - blockerHpBefore;
             dealDamageToPlayer(defendingPlayer, excess);
         }
