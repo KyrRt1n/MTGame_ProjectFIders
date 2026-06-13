@@ -73,7 +73,7 @@ public class CardView extends StackPane {
             if (imgStream != null) {
                 imageView.setImage(new Image(imgStream));
                 imageView.setFitWidth(118);
-                imageView.setFitHeight(65);
+                imageView.setFitHeight(88);
                 imageView.setPreserveRatio(false);
             }
         } catch (Exception e) {
