@@ -5,5 +5,6 @@ public enum CardKeywords {
     LIFELINK,
     TRAMPLE,
     REACH,
-    DEFENDER
+    DEFENDER,
+    HASTE
 }

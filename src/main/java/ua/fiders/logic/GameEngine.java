@@ -134,7 +134,6 @@ public class GameEngine {
 
     private void addPermanent(Card card, Player controller) {
         Permanent permanent = new Permanent(card, controller);
-        permanent.untap();
         summoningSick.add(permanent);
         state.getBattlefield().add(permanent);
         if (listener != null) {

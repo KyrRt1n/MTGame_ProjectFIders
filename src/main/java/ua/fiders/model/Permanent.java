@@ -16,7 +16,7 @@ public class Permanent {
     public Permanent(Card baseCard, Player controller) {
         this.baseCard = baseCard;
         this.controller = controller;
-        this.isTapped = true;
+        this.isTapped = !baseCard.getKeywords().contains(CardKeywords.HASTE);
         this.damageTaken = 0;
         this.permanentDamageBuff = 0;
         this.permanentHpBuff = 0;
