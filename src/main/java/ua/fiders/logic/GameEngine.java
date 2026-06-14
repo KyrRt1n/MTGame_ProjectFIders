@@ -244,6 +244,8 @@ public class GameEngine {
         }
         resolveCombat(new ArrayList<>(declaredAttackers), new LinkedHashMap<>(declaredBlocks));
         clearCombatSelections();
+
+        nextPhase();
     }
 
     private void clearCombatSelections() {

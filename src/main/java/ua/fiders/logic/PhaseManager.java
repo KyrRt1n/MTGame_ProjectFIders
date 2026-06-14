@@ -25,30 +25,23 @@ public class PhaseManager {
     }
 
     public void advance() {
-        if (currentPhase == Phase.END) {
-            passTurnToOpponent();
-        } else {
-            currentPhase = currentPhase.next();
-        }
+        currentPhase = currentPhase.next();
         runCurrentPhase();
     }
 
     private void runCurrentPhase() {
         switch (currentPhase) {
-            case START -> {
-                onStart();
-                enterMain();
-            }
+            case START       -> { onStart(); advanceTo(Phase.MAIN); }
             case MAIN        -> onMain();
             case COMBAT      -> onCombat();
             case SECOND_MAIN -> onSecondMain();
-            case END         -> onEnd();
+            case END         -> { onEnd(); passTurnToOpponent(); }
         }
     }
 
-    private void enterMain() {
-        currentPhase = Phase.MAIN;
-        onMain();
+    private void advanceTo(Phase phase) {
+        currentPhase = phase;
+        runCurrentPhase();
     }
 
     private void onStart() {
@@ -89,8 +82,8 @@ public class PhaseManager {
 
     private void passTurnToOpponent() {
         state.passTurn();
-        currentPhase = Phase.START;
         turnNumber++;
+        advanceTo(Phase.START);
     }
 
     public Phase getCurrentPhase() {
