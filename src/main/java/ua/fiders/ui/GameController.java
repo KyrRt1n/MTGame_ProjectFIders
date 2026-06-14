@@ -340,9 +340,11 @@ public class GameController {
 
     private void applyPendingSpell() {
         int handIndex = localPlayer.getHand().indexOf(pendingSpell);
+        int t1Index = battlefieldIndexOf(target1);
+        int t2Index = battlefieldIndexOf(target2);
 
         if (gameEngine.playCard(pendingSpell, target1, target2)) {
-            session.send("PLAY_SPELL_TARGET " + handIndex + " " + battlefieldIndexOf(target1) + " " + battlefieldIndexOf(target2));
+            session.send("PLAY_SPELL_TARGET " + handIndex + " " + t1Index + " " + t2Index);
             playerHandPanel.getChildren().remove(pendingSpellView);
             showSpellAnimation(pendingSpell, true);
         } else {
