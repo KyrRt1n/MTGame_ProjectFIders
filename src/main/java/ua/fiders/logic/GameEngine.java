@@ -98,10 +98,10 @@ public class GameEngine {
             case BiteEffect ignored          -> 2;
             case BuffStatsEffect ignored     -> 1;
             case DestroyTargetEffect ignored -> 1;
+            case DamageTargetEffect ignored  -> 1;
             case DamageEnemyEffect ignored   -> 0;
             case DrawCardEffect ignored      -> 0;
             case HealPlayerEffect ignored    -> 0;
-            default -> throw new IllegalArgumentException("Unknown effect: " + effect);
         };
     }
 
@@ -176,7 +176,8 @@ public class GameEngine {
                 && permanent.getBaseCard() instanceof CreatureCard
                 && permanent.getController() == state.getCurrentPlayer()
                 && !permanent.isTapped()
-                && !summoningSick.contains(permanent)
+                && (!summoningSick.contains(permanent)
+                || permanent.hasEffectiveKeyword(CardKeywords.HASTE, state))
                 && state.getBattlefield().contains(permanent)
                 && !permanent.hasEffectiveKeyword(CardKeywords.DEFENDER, state);
     }
