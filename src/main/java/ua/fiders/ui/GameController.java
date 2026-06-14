@@ -122,7 +122,7 @@ public class GameController {
         hostPlayer.setDeck(hostDeck);
         guestPlayer.setDeck(guestDeck);
 
-        dealStartingHand(hostPlayer, 7);
+        dealStartingHand(hostPlayer, 6);
         dealStartingHand(guestPlayer, 7);
 
         gameEngine = new GameEngine(hostPlayer, guestPlayer);
