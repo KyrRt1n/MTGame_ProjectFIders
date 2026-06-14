@@ -408,6 +408,9 @@ public class GameController {
         selectedAttacker = null;
         syncBattlefield();
         updateControls();
+
+        controlPanel.updatePhaseText(getLocalizedPhaseName(gameEngine.getCurrentPhase())
+                + "\nХід: " + (isMyTurn() ? "ТВІЙ" : "суперника"));
     }
 
     private void syncBattlefield() {
