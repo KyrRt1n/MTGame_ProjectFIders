@@ -224,15 +224,15 @@ public class CardView extends StackPane {
     /**
      * Візуальне виділення карти (наприклад, коли вона обрана для атаки)
      */
-    public void setHighlight(boolean active) {
-        if (active) {
-            // Додаємо червоне світіння та рамку
+    public void setHighlight(String hexColor) {
+        if (hexColor != null) {
+            // Додаємо світіння та рамку заданого кольору
             setStyle("-fx-background-color: #1c1c1f; " +
-                    "-fx-border-color: #ff4757; " +
+                    "-fx-border-color: " + hexColor + "; " +
                     "-fx-border-width: 3; " +
                     "-fx-border-radius: 12; " +
                     "-fx-background-radius: 12; " +
-                    "-fx-effect: dropshadow(three-pass-box, rgba(255, 71, 87, 0.8), 15, 0.5, 0, 0);");
+                    "-fx-effect: dropshadow(three-pass-box, " + hexColor + ", 15, 0.5, 0, 0);");
         } else {
             setStyle(DEFAULT_STYLE); // Повертаємо стандартний вигляд
         }

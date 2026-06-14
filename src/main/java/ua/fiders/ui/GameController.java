@@ -79,6 +79,15 @@ public class GameController {
     private Permanent target2 = null;
     private CardView pendingSpellView = null;
 
+    private final String[] COMBAT_COLORS = {
+          // Червоний   Зелений     Синій      Жовтий
+            "#ff4757", "#2ed573", "#1e90ff", "#f1c40f",
+            "#ff9ff3", "#00d2d3", "#9b59b6", "#e67e22"
+          // Рожевий   Бірюзовий  Фіолетовий Помаранчевий
+    };
+    private int colorIndex = 0;
+    private final Map<Permanent, String> attackerColors = new HashMap<>();
+
     public GameController(NetworkSession session, boolean isHost, long seed) {
         this.session = session;
         this.isHost = isHost;
@@ -188,17 +197,19 @@ public class GameController {
                 Permanent p = battlefieldAt(Integer.parseInt(parts[1]));
                 if (p != null) {
                     boolean attacking = gameEngine.toggleAttacker(p);
-                    CardView view = boardViews.get(p);
-                    if (view != null) view.setHighlight(attacking);
+                    if (attacking) {
+                        attackerColors.put(p, COMBAT_COLORS[colorIndex % COMBAT_COLORS.length]);
+                        colorIndex++;
+                    } else
+                        attackerColors.remove(p);
+                    updateCombatHighlights();
                 }
             }
             case "BLOCK" -> {
                 Permanent attacker = battlefieldAt(Integer.parseInt(parts[1]));
                 Permanent blocker  = battlefieldAt(Integer.parseInt(parts[2]));
-                if (attacker != null && blocker != null && gameEngine.assignBlocker(attacker, blocker)) {
-                    CardView view = boardViews.get(blocker);
-                    if (view != null) view.setHighlight(true);
-                }
+                if (attacker != null && blocker != null && gameEngine.assignBlocker(attacker, blocker))
+                    updateCombatHighlights();
             }
             case "ATTACK_DONE" -> {
                 attackConfirmed = true;
@@ -300,7 +311,11 @@ public class GameController {
 
         boardCardView.setOnMouseClicked(mouseEvent -> {
             if (mouseEvent.getButton() == MouseButton.PRIMARY) {
-                handleBoardCardClick(permanent, boardCardView);
+                if (pendingSpell != null)
+                    handleTargetSelection(permanent, boardCardView);
+                else
+                    handleCombatClick(permanent, boardCardView);
+
             } else if (mouseEvent.getButton() == MouseButton.SECONDARY) {
                 cancelTargeting(); // Правий клік скасовує прицілювання
             }
@@ -312,16 +327,25 @@ public class GameController {
     // бій та прицілювання
 
     private void handleBoardCardClick(Permanent permanent, CardView view) {
-
-        // режим прицілювання заклинання
-        if (pendingSpell != null) {
-            handleTargetSelection(permanent, view);
+        if (gameEngine.getCurrentPhase() != Phase.COMBAT)
             return;
-        }
 
-        // фаза бою
-        if (gameEngine.getCurrentPhase() == Phase.COMBAT) {
-            handleCombatClick(permanent, view);
+        if (toggleAttackerAndHighlight(permanent))
+            return;
+
+        if (!isMyTurn() && attackConfirmed) {
+            if (permanent.getController() != localPlayer) {
+                selectedAttacker = gameEngine.getDeclaredAttackers().contains(permanent) ? permanent : null;
+                return;
+            }
+            if (selectedAttacker == null) {
+                System.out.println("Спочатку клікни ворожого атакуючого");
+                return;
+            }
+            if (gameEngine.assignBlocker(selectedAttacker, permanent)) {
+                updateCombatHighlights();
+                session.send("BLOCK " + battlefieldIndexOf(selectedAttacker) + " " + battlefieldIndexOf(permanent));
+            }
         }
     }
 
@@ -366,14 +390,33 @@ public class GameController {
         syncBattlefield();
     }
 
-    private void handleCombatClick(Permanent permanent, CardView view) {
-        if (isMyTurn() && !attackConfirmed) {
-            if (permanent.getController() != localPlayer) return;
-            boolean nowAttacking = gameEngine.toggleAttacker(permanent);
-            view.setHighlight(nowAttacking);
-            session.send("ATTACKER " + battlefieldIndexOf(permanent));
-            return;
+    private void updateCombatHighlights() {
+        for (Map.Entry<Permanent, CardView> entry : boardViews.entrySet()) {
+            Permanent p = entry.getKey();
+            CardView view = entry.getValue();
+
+            if (gameEngine.getDeclaredAttackers().contains(p))
+                view.setHighlight(attackerColors.get(p));
+            else {
+                Permanent attackerItBlocks = null;
+
+                for (Map.Entry<Permanent, List<Permanent>> blockEntry : gameEngine.getDeclaredBlocks().entrySet())
+                    if (blockEntry.getValue().contains(p)) {
+                        attackerItBlocks = blockEntry.getKey();
+                        break;
+                    }
+
+                if (attackerItBlocks != null)
+                    view.setHighlight(attackerColors.get(attackerItBlocks));
+                else
+                    view.setHighlight(null);
+            }
         }
+    }
+
+    private void handleCombatClick(Permanent permanent, CardView view) {
+        if (toggleAttackerAndHighlight(permanent))
+            return;
 
         if (!isMyTurn() && attackConfirmed) {
             if (permanent.getController() != localPlayer) {
@@ -385,10 +428,31 @@ public class GameController {
                 return;
             }
             if (gameEngine.assignBlocker(selectedAttacker, permanent)) {
-                view.setHighlight(true);
+                updateCombatHighlights();
                 session.send("BLOCK " + battlefieldIndexOf(selectedAttacker) + " " + battlefieldIndexOf(permanent));
             }
         }
+    }
+
+    private boolean toggleAttackerAndHighlight(Permanent permanent) {
+        if (isMyTurn() && !attackConfirmed) {
+            if (permanent.getController() != localPlayer)
+                return true;
+
+            boolean nowAttacking = gameEngine.toggleAttacker(permanent);
+
+            if (nowAttacking) {
+                String color = COMBAT_COLORS[colorIndex % COMBAT_COLORS.length];
+                colorIndex++;
+                attackerColors.put(permanent, color);
+            } else
+                attackerColors.remove(permanent);
+
+            updateCombatHighlights();
+            session.send("ATTACKER " + battlefieldIndexOf(permanent));
+            return true;
+        }
+        return false;
     }
 
     private void confirmAttackClicked() {
@@ -406,6 +470,11 @@ public class GameController {
         gameEngine.executeCombat();
         attackConfirmed = false;
         selectedAttacker = null;
+
+        attackerColors.clear();
+        colorIndex = 0;
+        updateCombatHighlights();
+
         syncBattlefield();
         updateControls();
 
@@ -429,7 +498,7 @@ public class GameController {
 
             if (p.isTapped() && !view.isTapped()) view.tap();
             if (!p.isTapped() && view.isTapped()) view.untap();
-            view.setHighlight(false);
+            view.setHighlight(null);
 
             view.updateStats(p.getCurrentAttack(), p.getRemainingHp(), p.getMaxHp());
 
@@ -610,6 +679,11 @@ public class GameController {
         attackConfirmed = false;
         selectedAttacker = null;
         cancelTargeting();
+
+        attackerColors.clear();
+        colorIndex = 0;
+        updateCombatHighlights();
+
         syncBattlefield();
         updateControls();
 
