@@ -524,8 +524,8 @@ public class GameController {
         controlPanel = new GameControlPanel();
 
         opponentHandPanel = new OpponentHandPanel(remotePlayer.getHand().size());
-        playerGraveyard = new GraveyardPanel("ВІДБІЙ");
-        opponentGraveyard = new GraveyardPanel("ВІДБІЙ ВОРОГА");
+        playerGraveyard = new GraveyardPanel("КЛАДОВИЩЕ");
+        opponentGraveyard = new GraveyardPanel("КЛАДОВИЩЕ ВОРОГА");
 
         battleLogPanel = new BattleLogPanel();
         battleLogPanel.setOnMessageSent(text -> {
