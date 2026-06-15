@@ -121,8 +121,9 @@ public class GameController {
         String greenDeckPath = "/decks/Green.json";
         String redDeckPath  = "/decks/Red.json";
 
-        List<Card> hostDeck  = deckLoader.loadDeck(greenDeckPath);
-        List<Card> guestDeck = deckLoader.loadDeck(redDeckPath);
+
+        List<Card> hostDeck  = deckLoader.loadDeck(greenDeckPath, "uk");
+        List<Card> guestDeck = deckLoader.loadDeck(redDeckPath, "uk");
 
         Random rng = new Random(seed);
         Collections.shuffle(hostDeck, rng);
