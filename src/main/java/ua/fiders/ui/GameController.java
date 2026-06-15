@@ -51,6 +51,7 @@ public class GameController {
     private HandPanel playerHandPanel;
     private BattlefieldPanel battlefieldPanel;
     private GameControlPanel controlPanel;
+    private DeckPanel deckPanel;
 
     private Player localPlayer;
     private Player remotePlayer;
@@ -283,6 +284,10 @@ public class GameController {
             public void onHandUpdated(Player player) {
                 if (player == localPlayer) {
                     playerHandPanel.updateHand(player.getHand());
+                    // Оновлення к-сті карт
+                    if (deckPanel != null) {
+                        deckPanel.updateCount(player.getDeck().size());
+                    }
                 } else {
                     opponentHandPanel.updateHandSize(player.getHand().size());
                 }
@@ -522,10 +527,11 @@ public class GameController {
         playerHandPanel = new HandPanel();
         battlefieldPanel = new BattlefieldPanel();
         controlPanel = new GameControlPanel();
+        deckPanel = new DeckPanel(localPlayer.getDeck().size());
 
         opponentHandPanel = new OpponentHandPanel(remotePlayer.getHand().size());
         playerGraveyard = new GraveyardPanel("КЛАДОВИЩЕ");
-        opponentGraveyard = new GraveyardPanel("КЛАДОВИЩЕ ВОРОГА");
+        opponentGraveyard = new GraveyardPanel("КЛАДОВИЩЕ \n ВОРОГА");
 
         battleLogPanel = new BattleLogPanel();
         battleLogPanel.setOnMessageSent(text -> {
@@ -560,6 +566,34 @@ public class GameController {
 
         controlPanel.getChildren().addAll(confirmAttackBtn, fightBtn);
 
+        // Верхня панель інфа + рука ворога
+        HBox topArea = new HBox(20);
+        topArea.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(opponentHandPanel, Priority.ALWAYS);
+        topArea.getChildren().addAll(opponentInfoPanel, opponentHandPanel);
+        BorderPane.setMargin(topArea, new Insets(15, 15, 0, 15));
+        rootLayout.setTop(topArea);
+
+        // Нижня панель інфа, рука гравця + Колода)
+        HBox bottomArea = new HBox(20);
+        bottomArea.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(playerHandPanel, Priority.ALWAYS);
+        bottomArea.getChildren().addAll(playerInfoPanel, playerHandPanel, deckPanel);
+        BorderPane.setMargin(bottomArea, new Insets(0, 15, 15, 15));
+        rootLayout.setBottom(bottomArea);
+
+        // Журнал бою
+        VBox leftArea = new VBox();
+        VBox.setVgrow(battleLogPanel, Priority.ALWAYS);
+        leftArea.getChildren().add(battleLogPanel);
+        BorderPane.setMargin(leftArea, new Insets(15, 0, 15, 15));
+        rootLayout.setLeft(leftArea);
+
+        // Управління ходом
+        BorderPane.setMargin(controlPanel, new Insets(15, 15, 15, 15));
+        rootLayout.setRight(controlPanel);
+
+        // Стіл + Кладовища
         VBox graveyardsBox = new VBox(20);
         graveyardsBox.setAlignment(Pos.CENTER);
         graveyardsBox.getChildren().addAll(opponentGraveyard, playerGraveyard);
@@ -568,19 +602,7 @@ public class GameController {
         centerLayout.setAlignment(Pos.CENTER);
         HBox.setHgrow(battlefieldPanel, Priority.ALWAYS);
         centerLayout.getChildren().addAll(battlefieldPanel, graveyardsBox);
-
-        rootLayout.setTop(opponentHandPanel);
         rootLayout.setCenter(centerLayout);
-        rootLayout.setBottom(playerHandPanel);
-
-        VBox leftPanel = new VBox(20);
-        VBox.setVgrow(battleLogPanel, Priority.ALWAYS);
-        leftPanel.getChildren().addAll(opponentInfoPanel, battleLogPanel, playerInfoPanel);
-        BorderPane.setMargin(leftPanel, new Insets(20, 0, 20, 20));
-        rootLayout.setLeft(leftPanel);
-
-        BorderPane.setMargin(controlPanel, new Insets(20, 20, 20, 20));
-        rootLayout.setRight(controlPanel);
 
         setupDragAndDrop();
     }
