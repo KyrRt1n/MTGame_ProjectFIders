@@ -7,6 +7,7 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -46,8 +47,11 @@ public class BattleLogPanel extends VBox {
                 label.setWrapText(true);
                 label.setTextFill(Color.WHITE);
 
-                // Віднімаємо 35 пікселів, щоб залишити місце для вертикального скрол-бару і відступів
-                label.maxWidthProperty().bind(list.widthProperty().subtract(35));
+                // Важливо: біндимо саме prefWidth, а не maxWidth
+                label.prefWidthProperty().bind(list.widthProperty().subtract(15));
+
+                // Змушуємо Label розраховувати свою висоту на основі кількості рядків
+                label.setMinHeight(Region.USE_PREF_SIZE);
             }
 
             @Override
