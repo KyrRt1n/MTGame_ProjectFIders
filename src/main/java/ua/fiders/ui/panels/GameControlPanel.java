@@ -14,6 +14,7 @@ public class GameControlPanel extends VBox {
     private final Label phaseLabel;
     private final Label timerLabel;
     private final Button nextPhaseBtn;
+    private final Button mulliganBtn;
 
     public GameControlPanel() {
         setSpacing(15);
@@ -43,8 +44,13 @@ public class GameControlPanel extends VBox {
 
         nextPhaseBtn = new Button("НАСТУПНА ФАЗА");
         nextPhaseBtn.setStyle("-fx-background-color: #3498db; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px; -fx-padding: 10 20 10 20; -fx-background-radius: 5;");
+        nextPhaseBtn.setMaxWidth(Double.MAX_VALUE);
 
-        getChildren().addAll(titleLabel, phaseLabel, timerLabel, nextPhaseBtn);
+        mulliganBtn = new Button("ПЕРЕЗДАЧА (-1)");
+        mulliganBtn.setStyle("-fx-background-color: #e67e22; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px; -fx-padding: 10 20 10 20; -fx-background-radius: 5;");
+        mulliganBtn.setMaxWidth(Double.MAX_VALUE);
+
+        getChildren().addAll(titleLabel, phaseLabel, timerLabel, nextPhaseBtn, mulliganBtn);
     }
 
     public void updatePhaseText(String text) {
@@ -57,5 +63,14 @@ public class GameControlPanel extends VBox {
 
     public void setNextPhaseAction(Runnable action) {
         nextPhaseBtn.setOnAction(e -> action.run());
+    }
+
+    public void setMulliganAction(Runnable action) {
+        mulliganBtn.setOnAction(e -> action.run());
+    }
+
+    public void setMulliganVisible(boolean visible) {
+        mulliganBtn.setVisible(visible);
+        mulliganBtn.setManaged(visible); // Щоб кнопка не займала місце, коли прихована
     }
 }

@@ -27,7 +27,7 @@ public class DeckLoader {
     /**
      * Завантажує колоду з JSON-файлу, що знаходиться в resources.
      */
-    public List<Card> loadDeck(String resourcePath) {
+    public List<Card> loadDeck(String resourcePath, String language) {
         List<Card> deck = new ArrayList<>();
 
         try (InputStream is = getClass().getResourceAsStream(resourcePath)) {
@@ -43,7 +43,7 @@ public class DeckLoader {
                     int count = cardNode.get("count").asInt();
 
                     for (int i = 0; i < count; i++) {
-                        Card card = createCardFromJson(type, cardNode);
+                        Card card = createCardFromJson(type, cardNode, language);
                         if (card != null) {
                             deck.add(card);
                         }
@@ -60,11 +60,19 @@ public class DeckLoader {
     /**
      * Фабричний метод, що створює карти згідно з точними конструкторами моделей
      */
-    private Card createCardFromJson(String type, JsonNode node) {
-        String name = node.get("name").asText();
+    private Card createCardFromJson(String type, JsonNode node, String language) {
+        String name = node.get("name").has(language)
+                ? node.get("name").get(language).asText()
+                : node.get("name").get("uk").asText();
+
         String imgPath = node.get("imgPath").asText();
 
-        String description = node.has("description") ? node.get("description").asText() : "";
+        String description = "";
+        if (node.has("description")) {
+            description = node.get("description").has(language)
+                    ? node.get("description").get(language).asText()
+                    : node.get("description").get("uk").asText();
+        }
 
         Card card = null;
 

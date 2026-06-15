@@ -27,9 +27,8 @@ public class CardView extends StackPane {
     private final Card card;
     private boolean isTapped = false;
 
-    // Замінили один Label на два окремих
-    private Label attackLabel;
-    private Label hpLabel;
+    private Label attackValueLabel;
+    private Label hpValueLabel;
 
     private static final String DEFAULT_STYLE =
             "-fx-background-color: #1c1c1f; -fx-border-color: #3a3a3c; " +
@@ -69,14 +68,8 @@ public class CardView extends StackPane {
         nameLabel.setWrapText(true);
         nameLabel.setMaxWidth(90);
 
-        // Оновлений синій кристал мани
         Label manaLabel = new Label(String.valueOf(card.getManaCost()));
-        manaLabel.setTextFill(Color.WHITE);
-        manaLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
-        manaLabel.setStyle("-fx-background-color: linear-gradient(to bottom, #3498db, #2980b9); " +
-                "-fx-padding: 2 6 2 6; -fx-background-radius: 20; " +
-                "-fx-border-color: #1a5276; -fx-border-radius: 20; -fx-border-width: 1; " +
-                "-fx-effect: dropshadow(three-pass-box, rgba(41, 128, 185, 0.6), 5, 0, 0, 0);");
+        manaLabel.getStyleClass().add("mana-crystal");
 
         Region topSpacer = new Region();
         HBox.setHgrow(topSpacer, Priority.ALWAYS);
@@ -132,20 +125,36 @@ public class CardView extends StackPane {
         bottomBar.setAlignment(Pos.CENTER);
 
         if (card instanceof CreatureCard creatureCard) {
-            attackLabel = new Label("⚔ " + creatureCard.getAttack());
-            attackLabel.setTextFill(Color.web("#2c3e50"));
-            attackLabel.setFont(Font.font("Arial", FontWeight.BOLD, 13));
-            attackLabel.setStyle(METAL_BADGE_STYLE);
+            HBox attackBadge = new HBox(3);
+            attackBadge.setAlignment(Pos.CENTER);
+            attackBadge.getStyleClass().add("metal-badge");
+
+            Label attackIcon = new Label("⚔");
+            attackIcon.getStyleClass().add("attack-icon");
+
+            attackValueLabel = new Label(String.valueOf(creatureCard.getAttack()));
+            attackValueLabel.getStyleClass().add("stat-value");
+            attackValueLabel.setTextFill(Color.web("#2c3e50"));
+
+            attackBadge.getChildren().addAll(attackIcon, attackValueLabel);
 
             Region bottomSpacerRegion = new Region();
             HBox.setHgrow(bottomSpacerRegion, Priority.ALWAYS);
 
-            hpLabel = new Label("❤ " + creatureCard.getHp());
-            hpLabel.setTextFill(Color.web("#900C3F"));
-            hpLabel.setFont(Font.font("Arial", FontWeight.BOLD, 13));
-            hpLabel.setStyle(METAL_BADGE_STYLE);
+            HBox hpBadge = new HBox(3);
+            hpBadge.setAlignment(Pos.CENTER);
+            hpBadge.getStyleClass().add("metal-badge");
 
-            bottomBar.getChildren().addAll(attackLabel, bottomSpacerRegion, hpLabel);
+            Label hpIcon = new Label("❤");
+            hpIcon.getStyleClass().add("hp-icon");
+
+            hpValueLabel = new Label(String.valueOf(creatureCard.getHp()));
+            hpValueLabel.getStyleClass().add("stat-value");
+            hpValueLabel.setTextFill(Color.web("#900C3F"));
+
+            hpBadge.getChildren().addAll(hpIcon, hpValueLabel);
+
+            bottomBar.getChildren().addAll(attackBadge, bottomSpacerRegion, hpBadge);
         }
 
         contentLayout.getChildren().addAll(topBar, imageView, typeLabel, keywordsPane, descLabel, middleSpacer, bottomBar);
@@ -252,25 +261,23 @@ public class CardView extends StackPane {
     public void updateStats(int currentAttack, int remainingHp, int maxHp) {
         if (card instanceof CreatureCard) {
 
-            // Оновлюємо Атаку
-            if (attackLabel != null) {
-                attackLabel.setText("⚔ " + currentAttack);
+            if (attackValueLabel != null) {
+                attackValueLabel.setText(String.valueOf(currentAttack));
                 if (currentAttack > ((CreatureCard) card).getAttack()) {
-                    attackLabel.setTextFill(Color.web("#27ae60")); // Зелений (забафано)
+                    attackValueLabel.setTextFill(Color.web("#27ae60")); // Зелений (забафано)
                 } else {
-                    attackLabel.setTextFill(Color.web("#2c3e50")); // стандартний
+                    attackValueLabel.setTextFill(Color.web("#2c3e50")); // стандартний
                 }
             }
 
-            // Оновлюємо ХП
-            if (hpLabel != null) {
-                hpLabel.setText("❤ " + remainingHp);
+            if (hpValueLabel != null) {
+                hpValueLabel.setText(String.valueOf(remainingHp));
                 if (remainingHp < maxHp) {
-                    hpLabel.setTextFill(Color.web("#e74c3c")); // Яскраво-червоний (поранено)
+                    hpValueLabel.setTextFill(Color.web("#e74c3c")); // Яскраво-червоний (поранено)
                 } else if (maxHp > ((CreatureCard) card).getHp()) {
-                    hpLabel.setTextFill(Color.web("#27ae60")); // Зелений (забафано)
+                    hpValueLabel.setTextFill(Color.web("#27ae60")); // Зелений (забафано)
                 } else {
-                    hpLabel.setTextFill(Color.web("#900C3F")); // стандартний
+                    hpValueLabel.setTextFill(Color.web("#900C3F")); // стандартний
                 }
             }
         }

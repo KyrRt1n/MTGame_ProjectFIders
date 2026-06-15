@@ -12,11 +12,13 @@ import ua.fiders.model.enums.Phase;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 public class GameEngine {
@@ -32,22 +34,47 @@ public class GameEngine {
     private final Set<Permanent> declaredAttackers = new LinkedHashSet<>();
     private final Map<Permanent, List<Permanent>> declaredBlocks = new LinkedHashMap<>();
     private final Set<Permanent> summoningSick = new HashSet<>();
+    private final Map<Player, Random> mulliganRng = new HashMap<>();
 
     private final EffectExecutor effectExecutor;
 
     public GameEngine(Player player1, Player player2) {
+        this(player1, player2, 0L);
+    }
+
+    public GameEngine(Player player1, Player player2, long seed) {
         this.state = new GameState(player1, player2);
         this.phaseManager = new PhaseManager(this, state);
         this.combatResolver = new CombatResolver();
         this.landPlayedThisTurn = false;
         this.gameOver = false;
         this.effectExecutor = new EffectExecutor(this::logMessage);
+        // Окремий потік випадковості на кожного гравця, виведений із сіду гри.
+        // Так пересдача одного гравця не залежить від пересдачі іншого -
+        // у мережі обидві машини отримають однакові руки.
+        mulliganRng.put(player1, new Random(seed ^ 1L));
+        mulliganRng.put(player2, new Random(seed ^ 2L));
     }
 
     public void start() {
         phaseManager.startGame();
         clearSummoningSicknessFor(state.getCurrentPlayer());
         notifyTurnChanged();
+    }
+
+    public void mulligan(Player player) {
+        int newSize = Math.max(0, player.getHand().size() - 1);
+
+        player.getDeck().addAll(player.getHand());
+        player.getHand().clear();
+        Collections.shuffle(player.getDeck(), mulliganRng.get(player));
+
+        for (int i = 0; i < newSize; i++) {
+            Card drawn = player.drawnCard();
+            if (drawn == null) break;
+            player.getHand().add(drawn);
+        }
+        notifyHandUpdated(player);
     }
 
     public void nextPhase() {

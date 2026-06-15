@@ -56,22 +56,18 @@ public class GameController {
     private Player remotePlayer;
 
     private GameEngine gameEngine;
-
     private final NetworkSession session;
     private final boolean isHost;
     private final long seed;
-
     private final Map<Permanent, CardView> boardViews = new HashMap<>();
     private Permanent selectedAttacker;
     private boolean attackConfirmed;
-
     private Button confirmAttackBtn;
     private Button fightBtn;
-
     private BattleLogPanel battleLogPanel;
-
     private Timeline turnTimer;
     private int timeLeft = 120;
+    private boolean canMulligan = true;
 
     private Card pendingSpell = null;
     private int targetsNeeded = 0;
@@ -189,6 +185,11 @@ public class GameController {
                     showSpellAnimation(card, false);
                     syncBattlefield();
                 }
+            }
+            case "MULLIGAN" -> {
+                gameEngine.mulligan(remotePlayer);
+                opponentHandPanel.updateHandSize(remotePlayer.getHand().size());
+                battleLogPanel.addLogMessage("Суперник зробив перездачу.");
             }
             case "NEXT_PHASE" -> {
                 gameEngine.nextPhase();
@@ -372,6 +373,12 @@ public class GameController {
             session.send("PLAY_SPELL_TARGET " + handIndex + " " + t1Index + " " + t2Index);
             playerHandPanel.getChildren().remove(pendingSpellView);
             showSpellAnimation(pendingSpell, true);
+
+            if (canMulligan) {
+                canMulligan = false;
+                controlPanel.setMulliganVisible(false);
+            }
+
         } else {
             battleLogPanel.addLogMessage("Не вдалося зіграти заклинання.");
         }
@@ -528,6 +535,17 @@ public class GameController {
 
         controlPanel.updatePhaseText(getLocalizedPhaseName(gameEngine.getCurrentPhase()));
         controlPanel.setNextPhaseAction(this::advancePhase);
+
+        controlPanel.setMulliganAction(() -> {
+            if (canMulligan && isMyTurn()) {
+                gameEngine.mulligan(localPlayer);
+                session.send("MULLIGAN");
+                battleLogPanel.addLogMessage("Ти зробив перездачу.");
+            } else if (!isMyTurn()) {
+                battleLogPanel.addLogMessage("Перездачу можна зробити тільки у свій хід!");
+            }
+        });
+
         playerHandPanel.updateHand(localPlayer.getHand());
 
         confirmAttackBtn = new Button("ПІДТВЕРДИТИ АТАКУ");
@@ -616,6 +634,11 @@ public class GameController {
                                 showSpellAnimation(playedCard, true);
                             }
                             success = true;
+
+                            if (canMulligan) {
+                                canMulligan = false;
+                                controlPanel.setMulliganVisible(false);
+                            }
                         }
                     }
                 } else {
@@ -670,6 +693,12 @@ public class GameController {
 
     private void advancePhase() {
         if (!isMyTurn()) return;
+
+        if (canMulligan) {
+            canMulligan = false;
+            controlPanel.setMulliganVisible(false);
+        }
+
         cancelTargeting();
         gameEngine.nextPhase();
         session.send("NEXT_PHASE");
