@@ -39,7 +39,7 @@ public class GraveyardPanel extends StackPane {
         cardView.setTranslateX(0);
         cardView.setTranslateY(0);
         cardView.setRotate(0);
-        cardView.setHighlight(false);
+        cardView.setHighlight(null);
         cardView.setOpacity(0.6); // Робимо "мертву" карту трохи тьмянішою
         cardView.setOnMouseClicked(null);
         cardView.setOnDragDetected(null);

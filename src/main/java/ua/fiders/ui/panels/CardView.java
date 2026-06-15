@@ -13,6 +13,7 @@ import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.TextAlignment;
 import ua.fiders.model.cards.Card;
+import ua.fiders.model.cards.LandCard;
 import ua.fiders.model.enums.CardKeywords;
 import ua.fiders.model.cards.CreatureCard;
 import javafx.animation.RotateTransition;
@@ -79,7 +80,10 @@ public class CardView extends StackPane {
 
         Region topSpacer = new Region();
         HBox.setHgrow(topSpacer, Priority.ALWAYS);
-        topBar.getChildren().addAll(nameLabel, topSpacer, manaLabel);
+        if (!(card instanceof LandCard lc))
+            topBar.getChildren().addAll(nameLabel, topSpacer, manaLabel);
+        else
+            topBar.getChildren().addAll(nameLabel, topSpacer);
 
         // Картинка
         ImageView imageView = new ImageView();
@@ -153,7 +157,11 @@ public class CardView extends StackPane {
 
     private void setupTooltip() {
         // Спливаюча  підказка, щоб зручно читати дрібний текст
-        String tooltipText = card.getName().toUpperCase() + " (Мана: " + card.getManaCost() + ")\n";
+        String tooltipText = card.getName().toUpperCase();
+        if (!(card instanceof LandCard lc))
+            tooltipText += " (Мана: " + card.getManaCost() + ")";
+        tooltipText += "\n";
+
         if (card.getDescription() != null && !card.getDescription().isBlank()) {
             tooltipText += "\n" + card.getDescription();
         }
@@ -224,15 +232,15 @@ public class CardView extends StackPane {
     /**
      * Візуальне виділення карти (наприклад, коли вона обрана для атаки)
      */
-    public void setHighlight(boolean active) {
-        if (active) {
-            // Додаємо червоне світіння та рамку
+    public void setHighlight(String hexColor) {
+        if (hexColor != null) {
+            // Додаємо світіння та рамку заданого кольору
             setStyle("-fx-background-color: #1c1c1f; " +
-                    "-fx-border-color: #ff4757; " +
+                    "-fx-border-color: " + hexColor + "; " +
                     "-fx-border-width: 3; " +
                     "-fx-border-radius: 12; " +
                     "-fx-background-radius: 12; " +
-                    "-fx-effect: dropshadow(three-pass-box, rgba(255, 71, 87, 0.8), 15, 0.5, 0, 0);");
+                    "-fx-effect: dropshadow(three-pass-box, " + hexColor + ", 15, 0.5, 0, 0);");
         } else {
             setStyle(DEFAULT_STYLE); // Повертаємо стандартний вигляд
         }
