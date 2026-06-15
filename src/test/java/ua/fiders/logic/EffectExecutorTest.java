@@ -33,7 +33,7 @@ class EffectExecutorTest {
 
     @BeforeEach
     void setUp() {
-        executor = new EffectExecutor();
+        executor = new EffectExecutor(System.out::println);
         caster   = new Player("Caster");
         enemy    = new Player("Enemy");
         state    = new GameState(caster, enemy);
