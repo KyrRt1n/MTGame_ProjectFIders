@@ -40,3 +40,51 @@
     -fx-shape: " "; /* Заміняємо іконку стрілочки на порожнечу */
     -fx-padding: 0;
 }
+
+/*
+   СТИЛІ ДЛЯ КАРТОК (CardView)
+   */
+
+.mana-crystal {
+    -fx-background-color: linear-gradient(to bottom, #3498db, #2980b9);
+    -fx-padding: 2 6 2 6;
+    -fx-background-radius: 20;
+    -fx-border-color: #1a5276;
+    -fx-border-radius: 20;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(three-pass-box, rgba(41, 128, 185, 0.6), 5, 0, 0, 0);
+    -fx-text-fill: white;
+    -fx-font-family: "Arial";
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+}
+
+.metal-badge {
+    -fx-background-color: linear-gradient(to bottom, #ecf0f1, #95a5a6);
+    -fx-border-color: #555555;
+    -fx-border-width: 1;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+    -fx-padding: 1 4 1 4;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 3, 0, 1, 1);
+}
+
+.attack-icon {
+    -fx-text-fill: #2c3e50;
+    -fx-font-family: "Arial";
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+}
+
+.hp-icon {
+    -fx-text-fill: #c0392b;
+    -fx-font-family: "Arial";
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+}
+
+.stat-value {
+    -fx-font-family: "Arial";
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+}
